@@ -7,10 +7,7 @@ const API_KEY = process.env.API_KEY || '';
 // Google keys usually start with "AIza"
 // Zhipu keys are usually "id.secret" format containing a dot
 const getProvider = (): 'ZHIPU' | 'GEMINI' => {
-  if (API_KEY && API_KEY.includes('.') && !API_KEY.startsWith('AIza')) {
-    return 'ZHIPU';
-  }
-  return 'GEMINI';
+  return 'ZHIPU';
 };
 
 const getAiClient = () => {
@@ -30,7 +27,7 @@ async function callZhipuAI(
   if (!API_KEY) throw new Error("API Key missing");
 
   const payload: any = {
-    model: "glm-4-flash", // Using GLM-4-Flash as requested (interpreting "4.7" as the latest flash)
+    model: "glm-4.7-flash", // Using GLM-4-Flash as requested (interpreting "4.7" as the latest flash)
     messages: messages,
     temperature: 0.7,
     top_p: 0.9,

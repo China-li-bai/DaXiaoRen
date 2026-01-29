@@ -84,13 +84,13 @@ const VillainForm: React.FC<Props> = ({ lang, onSubmit }) => {
                type="text"
                value={searchQuery}
                onChange={(e) => setSearchQuery(e.target.value)}
-               placeholder={lang === 'en' ? "e.g., The Mayor of Gotham, My CEO" : "例如：2026年广州市委书记，我的老板"}
+               placeholder={lang === 'en' ? "e.g., The Mayor of Gotham, My CEO" : "例如：2026年欺负老百姓的小人"}
                className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
              />
              <p className="text-xs text-slate-500 mt-2">
                {lang === 'en' 
                  ? "AI will search Google to find the name and role." 
-                 : "AI 将通过谷歌搜索自动查找人名和职位。"}
+                 : "AI 将通过搜索自动查找人名和职位。"}
              </p>
            </div>
            <button
