@@ -83,10 +83,18 @@ const cache = new APICache();
 
 const pendingRequests = new Map<string, Promise<any>>();
 
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000;
+
+async function sleep(ms: number): Promise<void> {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 async function callZhipuAI(
   messages: { role: string; content: string }[],
   jsonMode: boolean = false,
-  webSearch: boolean = false
+  webSearch: boolean = false,
+  retryCount: number = 0
 ): Promise<string> {
   if (!API_KEY) throw new Error("API Key missing");
 
@@ -104,11 +112,14 @@ async function callZhipuAI(
     return pendingRequests.get(cacheKey)!;
   }
 
+  // Try GLM-4.7-Flash first (newer, better), fallback to GLM-4-Flash-250414
+  const model = retryCount === 0 ? "glm-4.7-flash" : "glm-4-flash-250414";
+  
   // Optimize parameters based on use case
-  // Search scenario: use GLM-4-Flash-250414 (free, real-time web search)
-  // Generation scenario: use GLM-4-Flash-250414 with thinking enabled
+  // Search scenario: use GLM-4.7-Flash/GLM-4-Flash-250414 (free, real-time web search)
+  // Generation scenario: use GLM-4.7-Flash/GLM-4-Flash-250414 with thinking enabled
   const payload: any = {
-    model: "glm-4-flash-250414",
+    model: model,
     messages: messages,
     temperature: webSearch ? 0.3 : 0.7,
     top_p: 0.9,
@@ -138,7 +149,16 @@ async function callZhipuAI(
 
       if (!response.ok) {
         const err = await response.text();
-        throw new Error(`Zhipu API Error: ${err}`);
+        const errorData = JSON.parse(err);
+        
+        // Retry on 429 (rate limit) or 5xx errors
+        if ((response.status === 429 || response.status >= 500) && retryCount < MAX_RETRIES) {
+          console.log(`[Retry] ${response.status} error, retrying (${retryCount + 1}/${MAX_RETRIES}) with ${retryCount === 0 ? 'GLM-4-Flash-250414' : 'same model'}...`);
+          await sleep(RETRY_DELAY * (retryCount + 1));
+          return callZhipuAI(messages, jsonMode, webSearch, retryCount + 1);
+        }
+        
+        throw new Error(`Zhipu API Error: ${response.status} - ${errorData.error?.message || err}`);
       }
 
       const data = await response.json();
@@ -150,6 +170,14 @@ async function callZhipuAI(
       return result;
     } catch (error) {
       console.error("Zhipu/GLM Request Failed:", error);
+      
+      // Retry on network errors
+      if (retryCount < MAX_RETRIES && error.name !== 'AbortError') {
+        console.log(`[Retry] Network error, retrying (${retryCount + 1}/${MAX_RETRIES})...`);
+        await sleep(RETRY_DELAY * (retryCount + 1));
+        return callZhipuAI(messages, jsonMode, webSearch, retryCount + 1);
+      }
+      
       throw error;
     }
   })();
