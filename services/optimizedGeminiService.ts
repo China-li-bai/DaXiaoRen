@@ -135,7 +135,7 @@ async function callZhipuAI(
     messages: messages,
     temperature: webSearch ? 0.3 : 0.7,
     top_p: 0.9,
-    thinking: { type: "disabled" }
+    thinking: { type: "enabled", clear_thinking: true }
   };
 
   if (webSearch) {
@@ -175,7 +175,14 @@ async function callZhipuAI(
       }
 
       const data = await response.json();
-      const result = data.choices[0]?.message?.content || "{}";
+      let result = data.choices[0]?.message?.content || "{}";
+      
+      // Filter out reasoning_content if present (thinking mode output)
+      const message = data.choices[0]?.message;
+      if (message && message.reasoning_content) {
+        console.log('[Thinking] Reasoning content filtered out');
+        result = message.content || "{}";
+      }
       
       // Cache the result
       cache.set('zhipu', { messages, jsonMode, webSearch }, result);
