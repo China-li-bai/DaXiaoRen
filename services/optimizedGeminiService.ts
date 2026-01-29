@@ -90,6 +90,24 @@ async function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+function selectModel(webSearch: boolean, retryCount: number): string {
+  if (retryCount === 0) {
+    if (webSearch) {
+      return "glm-4-flash-250414";
+    } else {
+      return "glm-z1-flash";
+    }
+  } else if (retryCount === 1) {
+    if (webSearch) {
+      return "glm-4.7-flash";
+    } else {
+      return "glm-4-flash-250414";
+    }
+  } else {
+    return "glm-4.7-flash";
+  }
+}
+
 async function callZhipuAI(
   messages: { role: string; content: string }[],
   jsonMode: boolean = false,
@@ -100,30 +118,24 @@ async function callZhipuAI(
 
   const cacheKey = JSON.stringify({ messages, jsonMode, webSearch });
   
-  // Check cache
   const cached = cache.get<string>('zhipu', { messages, jsonMode, webSearch });
   if (cached) {
     return cached;
   }
 
-  // Check for duplicate in-flight request
   if (pendingRequests.has(cacheKey)) {
     console.log('[Dedup] Reusing pending request:', cacheKey);
     return pendingRequests.get(cacheKey)!;
   }
 
-  // Try GLM-4.7-Flash first (newer, better), fallback to GLM-4-Flash-250414
-  const model = retryCount === 0 ? "glm-4.7-flash" : "glm-4-flash-250414";
+  const model = selectModel(webSearch, retryCount);
   
-  // Optimize parameters based on use case
-  // Search scenario: use GLM-4.7-Flash/GLM-4-Flash-250414 (free, real-time web search)
-  // Generation scenario: use GLM-4.7-Flash/GLM-4-Flash-250414 with thinking enabled
   const payload: any = {
     model: model,
     messages: messages,
     temperature: webSearch ? 0.3 : 0.7,
     top_p: 0.9,
-    thinking: webSearch ? { type: "disabled" } : { type: "enabled" }
+    thinking: { type: "disabled" }
   };
 
   if (webSearch) {
@@ -153,7 +165,8 @@ async function callZhipuAI(
         
         // Retry on 429 (rate limit) or 5xx errors
         if ((response.status === 429 || response.status >= 500) && retryCount < MAX_RETRIES) {
-          console.log(`[Retry] ${response.status} error, retrying (${retryCount + 1}/${MAX_RETRIES}) with ${retryCount === 0 ? 'GLM-4-Flash-250414' : 'same model'}...`);
+          const nextModel = selectModel(webSearch, retryCount + 1);
+          console.log(`[Retry] ${response.status} error, retrying (${retryCount + 1}/${MAX_RETRIES}) with ${nextModel}...`);
           await sleep(RETRY_DELAY * (retryCount + 1));
           return callZhipuAI(messages, jsonMode, webSearch, retryCount + 1);
         }
