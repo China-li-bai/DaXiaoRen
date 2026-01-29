@@ -142,7 +142,9 @@ async function callZhipuAI(
   const requestPromise = (async () => {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15s timeout
+      // 深度思考模式下响应时间较长，增加到 60 秒
+      const timeoutMs = webSearch ? 60000 : 90000; // 搜索 60s，生成 90s
+      const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
       const response = await fetch("https://open.bigmodel.cn/api/paas/v4/chat/completions", {
         method: "POST",
