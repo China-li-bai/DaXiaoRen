@@ -91,18 +91,14 @@ async function sleep(ms: number): Promise<void> {
 }
 
 function selectModel(webSearch: boolean, retryCount: number): string {
+  // 根据测试结果，GLM-4.7-Flash 是唯一支持 JSON 输出且不频繁限流的模型
+  // GLM-4-Flash 频繁 429 限流
+  // GLM-Z1-Flash 不支持 response_format: { type: "json_object" }
+  
   if (retryCount === 0) {
-    if (webSearch) {
-      return "glm-4-flash-250414";
-    } else {
-      return "glm-z1-flash";
-    }
+    return "glm-4.7-flash";
   } else if (retryCount === 1) {
-    if (webSearch) {
-      return "glm-4.7-flash";
-    } else {
-      return "glm-4-flash-250414";
-    }
+    return "glm-4-flash-250414";
   } else {
     return "glm-4.7-flash";
   }
@@ -135,7 +131,8 @@ async function callZhipuAI(
     messages: messages,
     temperature: webSearch ? 0.3 : 0.7,
     top_p: 0.9,
-    thinking: { type: "enabled", clear_thinking: true }
+    thinking: { type: "enabled", clear_thinking: true },
+    response_format: { type: "json_object" }
   };
 
   if (webSearch) {
