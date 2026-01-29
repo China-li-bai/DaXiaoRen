@@ -104,11 +104,15 @@ async function callZhipuAI(
     return pendingRequests.get(cacheKey)!;
   }
 
+  // Optimize parameters based on use case
+  // Search scenario: lower temperature for stability, disable thinking for speed
+  // Generation scenario: higher temperature for creativity
   const payload: any = {
     model: "glm-4-flash",
     messages: messages,
-    temperature: 0.7,
+    temperature: webSearch ? 0.4 : 0.7,
     top_p: 0.9,
+    thinking: webSearch ? { type: "disabled" } : { type: "enabled" }
   };
 
   if (webSearch) {
