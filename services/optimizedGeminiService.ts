@@ -105,12 +105,12 @@ async function callZhipuAI(
   }
 
   // Optimize parameters based on use case
-  // Search scenario: lower temperature for stability, disable thinking for speed
-  // Generation scenario: higher temperature for creativity
+  // Search scenario: use GLM-4-Flash-250414 (free, real-time web search)
+  // Generation scenario: use GLM-4-Flash-250414 with thinking enabled
   const payload: any = {
-    model: "glm-4-flash",
+    model: "glm-4-flash-250414",
     messages: messages,
-    temperature: webSearch ? 0.4 : 0.7,
+    temperature: webSearch ? 0.3 : 0.7,
     top_p: 0.9,
     thinking: webSearch ? { type: "disabled" } : { type: "enabled" }
   };
