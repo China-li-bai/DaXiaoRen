@@ -4,8 +4,12 @@ import react from '@vitejs/plugin-react';
 
 export default defineConfig(({ mode }) => {
     const env = loadEnv(mode, '.', '');
+    // Detect if using custom domain (set in GitHub Actions)
+    const isCustomDomain = env.CUSTOM_DOMAIN === 'true';
+    
     return {
-      base: '/DaXiaoRen/',
+      // Use '/' for custom domain, '/DaXiaoRen/' for GitHub Pages default
+      base: isCustomDomain ? '/' : '/DaXiaoRen/',
       server: {
         port: 3000,
         host: '0.0.0.0',

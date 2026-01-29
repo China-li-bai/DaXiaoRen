@@ -45,6 +45,7 @@ jobs:
           # Secrets needed at build time can be accessed here
           # Configure these in your GitHub Repo Settings -> Secrets
           API_KEY: ${{ secrets.API_KEY }}
+          CUSTOM_DOMAIN: 'true'
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
