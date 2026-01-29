@@ -1,14 +1,15 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { AppStep, Language, VillainData, ChantResponse, ResolutionResponse, VillainRecord } from './types';
 import { TRANSLATIONS, PAYMENT_CONFIG } from './constants';
-import { generateRitualChant, generateResolution } from './services/geminiService';
+import { generateRitualChant, generateResolution } from './services/optimizedGeminiService';
 import { getLocalRecords, saveLocalRecord, deleteLocalRecord } from './services/storageService';
 import LanguageSwitch from './components/LanguageSwitch';
-import VillainForm from './components/VillainForm';
-import RitualStage from './components/RitualStage';
-import Conclusion from './components/Conclusion';
-import PaymentModal from './components/PaymentModal';
-import HistoryDrawer from './components/HistoryDrawer';
+
+const VillainForm = lazy(() => import('./components/VillainForm'));
+const RitualStage = lazy(() => import('./components/RitualStage'));
+const Conclusion = lazy(() => import('./components/Conclusion'));
+const PaymentModal = lazy(() => import('./components/PaymentModal'));
+const HistoryDrawer = lazy(() => import('./components/HistoryDrawer'));
 
 const App: React.FC = () => {
   const [lang, setLang] = useState<Language>('zh');
@@ -245,7 +246,9 @@ const App: React.FC = () => {
         )}
 
         {step === AppStep.INPUT && (
-          <VillainForm lang={lang} onSubmit={handleFormSubmit} />
+          <Suspense fallback={<div className="text-center text-slate-400">Loading...</div>}>
+            <VillainForm lang={lang} onSubmit={handleFormSubmit} />
+          </Suspense>
         )}
 
         {step === AppStep.PREPARING && (
@@ -257,12 +260,14 @@ const App: React.FC = () => {
         )}
 
         {step === AppStep.RITUAL && villain && chant && (
-          <RitualStage 
-            lang={lang} 
-            villain={villain} 
-            chantData={chant} 
-            onComplete={handleRitualComplete} 
-          />
+          <Suspense fallback={<div className="text-center text-slate-400">Loading...</div>}>
+            <RitualStage 
+              lang={lang} 
+              villain={villain} 
+              chantData={chant} 
+              onComplete={handleRitualComplete} 
+            />
+          </Suspense>
         )}
 
         {step === AppStep.RESOLVING && (
@@ -273,32 +278,38 @@ const App: React.FC = () => {
         )}
 
         {step === AppStep.CONCLUSION && resolution && (
-          <Conclusion 
-            lang={lang} 
-            resolution={resolution} 
-            onReset={handleReset} 
-          />
+          <Suspense fallback={<div className="text-center text-slate-400">Loading...</div>}>
+            <Conclusion 
+              lang={lang} 
+              resolution={resolution} 
+              onReset={handleReset} 
+            />
+          </Suspense>
         )}
       </main>
 
       {/* Payment Modal */}
       {showPayment && (
-        <PaymentModal 
-            lang={lang} 
-            onPaymentComplete={handlePaymentSuccess} 
-            onClose={() => setShowPayment(false)} 
-        />
+        <Suspense fallback={null}>
+          <PaymentModal 
+              lang={lang} 
+              onPaymentComplete={handlePaymentSuccess} 
+              onClose={() => setShowPayment(false)} 
+          />
+        </Suspense>
       )}
 
       {/* History Drawer */}
-      <HistoryDrawer 
-        lang={lang}
-        isOpen={showHistory}
-        onClose={() => setShowHistory(false)}
-        records={records}
-        onSelect={handleHistorySelect}
-        onDelete={handleHistoryDelete}
-      />
+      <Suspense fallback={null}>
+        <HistoryDrawer 
+          lang={lang}
+          isOpen={showHistory}
+          onClose={() => setShowHistory(false)}
+          records={records}
+          onSelect={handleHistorySelect}
+          onDelete={handleHistoryDelete}
+        />
+      </Suspense>
 
       <footer className="z-10 mt-8 text-slate-600 text-xs text-center pb-4">
         © {new Date().getFullYear()} VillainSmash. 

@@ -19,6 +19,20 @@ export default defineConfig(({ mode }) => {
         alias: {
           '@': path.resolve(__dirname, '.'),
         }
+      },
+      build: {
+        rollupOptions: {
+          output: {
+            manualChunks: {
+              'vendor': ['react', 'react-dom'],
+              'services': ['./services/optimizedGeminiService']
+            }
+          }
+        },
+        chunkSizeWarningLimit: 500
+      },
+      optimizeDeps: {
+        include: ['react', 'react-dom']
       }
     };
 });
