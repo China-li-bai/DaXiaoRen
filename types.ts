@@ -15,6 +15,12 @@ export interface VillainData {
   imageUrl?: string; // Data URL for the uploaded avatar
 }
 
+export interface VillainRecord extends VillainData {
+  id: string;
+  timestamp: number;
+  chant?: ChantResponse;
+}
+
 export enum AppStep {
   INTRO = 'INTRO',
   PAYMENT = 'PAYMENT', // New step for payment gate

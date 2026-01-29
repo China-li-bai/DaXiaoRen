@@ -41,6 +41,11 @@ export const TRANSLATIONS = {
     scanToPay: "Scan QR Code to Support",
     iHavePaid: "I Have Completed the Offering",
     freeTrialEnded: "Free Trial Ended",
+    historyTitle: "Book of Grudges",
+    noHistory: "No spirits sealed yet.",
+    loadRecord: "Summon Again",
+    deleteRecord: "Burn Record",
+    openHistory: "View Records",
     types: {
       [VillainType.BOSS]: "Toxic Boss / Colleague",
       [VillainType.EX_PARTNER]: "Toxic Ex-Partner",
@@ -80,6 +85,11 @@ export const TRANSLATIONS = {
     scanToPay: "扫码支付香火钱",
     iHavePaid: "我已完成支付",
     freeTrialEnded: "免费试用结束",
+    historyTitle: "小人名册",
+    noHistory: "暂无封印记录",
+    loadRecord: "拖出再打",
+    deleteRecord: "销毁记录",
+    openHistory: "查看小人名册",
     types: {
       [VillainType.BOSS]: "职场小人 / 恶霸老板",
       [VillainType.EX_PARTNER]: "烂桃花 / 前任",

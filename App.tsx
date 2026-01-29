@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { AppStep, Language, VillainData, ChantResponse, ResolutionResponse } from './types';
+import { AppStep, Language, VillainData, ChantResponse, ResolutionResponse, VillainRecord } from './types';
 import { TRANSLATIONS, PAYMENT_CONFIG } from './constants';
 import { generateRitualChant, generateResolution } from './services/geminiService';
+import { getLocalRecords, saveLocalRecord, deleteLocalRecord } from './services/storageService';
 import LanguageSwitch from './components/LanguageSwitch';
 import VillainForm from './components/VillainForm';
 import RitualStage from './components/RitualStage';
 import Conclusion from './components/Conclusion';
 import PaymentModal from './components/PaymentModal';
+import HistoryDrawer from './components/HistoryDrawer';
 
 const App: React.FC = () => {
   const [lang, setLang] = useState<Language>('zh');
@@ -20,14 +22,19 @@ const App: React.FC = () => {
   const [credits, setCredits] = useState<number>(PAYMENT_CONFIG.freeCredits);
   const [showPayment, setShowPayment] = useState(false);
 
+  // History System
+  const [showHistory, setShowHistory] = useState(false);
+  const [records, setRecords] = useState<VillainRecord[]>([]);
+
   const t = TRANSLATIONS[lang];
 
-  // Optional: Persist credits to local storage
+  // Load credits and history
   useEffect(() => {
     const savedCredits = localStorage.getItem('vs_credits');
     if (savedCredits) {
       setCredits(parseInt(savedCredits, 10));
     }
+    setRecords(getLocalRecords());
   }, []);
 
   const saveCredits = (amount: number) => {
@@ -46,16 +53,14 @@ const App: React.FC = () => {
   };
 
   const handlePaymentSuccess = () => {
-    saveCredits(credits + 5); // Add 5 credits on "payment"
+    saveCredits(credits + 5); 
     setShowPayment(false);
-    // If we were blocked at start, go to input
     if (step === AppStep.INTRO) {
         setStep(AppStep.INPUT);
     }
   };
 
   const handleFormSubmit = async (data: VillainData) => {
-    // Double check credits before API call
     if (credits <= 0) {
         setShowPayment(true);
         return;
@@ -63,16 +68,67 @@ const App: React.FC = () => {
 
     setVillain(data);
     setStep(AppStep.PREPARING);
-    // Call Gemini to generate chant
+    
+    // Call Gemini
     const result = await generateRitualChant(data, lang);
     setChant(result);
+    
+    // Save to History immediately
+    const newRecord: VillainRecord = {
+      ...data,
+      id: Date.now().toString(),
+      timestamp: Date.now(),
+      chant: result
+    };
+    const updatedRecords = saveLocalRecord(newRecord);
+    setRecords(updatedRecords);
+
     setStep(AppStep.RITUAL);
+  };
+
+  const handleHistorySelect = (record: VillainRecord) => {
+    if (credits <= 0) {
+      setShowPayment(true);
+      return;
+    }
+    
+    // Restore state from record
+    setVillain({
+      name: record.name,
+      type: record.type,
+      reason: record.reason,
+      imageUrl: record.imageUrl
+    });
+    
+    // If chant exists in record, use it, otherwise regenerate (unlikely if saved correctly)
+    if (record.chant) {
+      setChant(record.chant);
+      setStep(AppStep.RITUAL);
+    } else {
+      // Fallback: regen
+      handleFormSubmit({
+         name: record.name,
+         type: record.type,
+         reason: record.reason,
+         imageUrl: record.imageUrl
+      });
+    }
+    
+    setShowHistory(false);
+    // Ensure agreement if coming from fresh load
+    if (step === AppStep.INTRO) {
+        setHasAgreed(true); // Implicit agreement if they are loading history
+    }
+  };
+
+  const handleHistoryDelete = (id: string) => {
+    const updated = deleteLocalRecord(id);
+    setRecords(updated);
   };
 
   const handleRitualComplete = async () => {
     setStep(AppStep.RESOLVING);
     
-    // Deduct credit here
     if (credits > 0) {
         saveCredits(credits - 1);
     }
@@ -92,13 +148,10 @@ const App: React.FC = () => {
     setStep(AppStep.INTRO);
   };
 
-  // Background visual elements
   const renderBackground = () => (
     <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden">
-      {/* Neon Glows */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-red-900/20 rounded-full blur-[100px]" />
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-amber-900/20 rounded-full blur-[100px]" />
-      {/* Grid Pattern */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px]" />
     </div>
   );
@@ -117,6 +170,23 @@ const App: React.FC = () => {
          <span className="text-slate-500 text-xs ml-1 hover:text-white">+</span>
       </div>
 
+      {/* History Button (Visible on Intro and Input) */}
+      {(step === AppStep.INTRO || step === AppStep.INPUT) && (
+        <button 
+          onClick={() => setShowHistory(true)}
+          className="absolute top-16 left-4 z-40 bg-slate-900/80 backdrop-blur border border-slate-700 p-2 rounded-full text-slate-400 hover:text-amber-500 hover:border-amber-500 transition-colors shadow-lg"
+          title={t.openHistory}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+        </button>
+      )}
+
       <main className="z-10 w-full flex flex-col items-center justify-center flex-grow">
         
         {step === AppStep.INTRO && (
@@ -129,14 +199,12 @@ const App: React.FC = () => {
             </p>
             
             <div className="mt-12">
-               {/* Decorative Shoes Icon */}
                <div className="flex justify-center gap-4 mb-8 opacity-70">
                  <span className="text-4xl">👞</span>
                  <span className="text-4xl">⚡</span>
                  <span className="text-4xl">🐯</span>
                </div>
 
-               {/* Disclaimer Box */}
                <div className="bg-slate-900/60 p-5 rounded-lg border border-slate-700 backdrop-blur-sm text-left mb-8 shadow-xl">
                   <p className="text-xs text-slate-400 mb-4 leading-relaxed font-sans">
                     {t.disclaimer}
@@ -221,6 +289,16 @@ const App: React.FC = () => {
             onClose={() => setShowPayment(false)} 
         />
       )}
+
+      {/* History Drawer */}
+      <HistoryDrawer 
+        lang={lang}
+        isOpen={showHistory}
+        onClose={() => setShowHistory(false)}
+        records={records}
+        onSelect={handleHistorySelect}
+        onDelete={handleHistoryDelete}
+      />
 
       <footer className="z-10 mt-8 text-slate-600 text-xs text-center pb-4">
         © {new Date().getFullYear()} VillainSmash. 
