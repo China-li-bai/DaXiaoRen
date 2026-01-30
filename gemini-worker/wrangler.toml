@@ -1,0 +1,6 @@
+name = "gemini-api"
+main = "src/worker.js"
+compatibility_date = "2024-01-01"
+
+[vars]
+# API Key 将在 Cloudflare Dashboard 中设置
