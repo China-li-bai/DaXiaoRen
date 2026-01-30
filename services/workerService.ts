@@ -1,6 +1,6 @@
 import { VillainData, Language, ChantResponse, ResolutionResponse, IdentifyResponse } from '../types';
 
-const WORKER_URL = 'https://daxiaoren-api.1272679088.workers.dev';
+const WORKER_URL = 'https://glm.api.66666618.xyz';
 
 async function callWorkerAPI(endpoint: string, body: any): Promise<any> {
   try {

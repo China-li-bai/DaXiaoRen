@@ -1,4 +1,4 @@
-const WORKER_URL = 'https://daxiaoren-api.1272679088.workers.dev';
+const WORKER_URL = 'https://glm.api.66666618.xyz';
 
 async function testWorkerAPI() {
   console.log('🧪 测试 Cloudflare Worker API...\n');
