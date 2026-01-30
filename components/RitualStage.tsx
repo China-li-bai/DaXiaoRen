@@ -26,6 +26,7 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete }) 
   const [isShaking, setIsShaking] = useState(false);
   const [impactEffect, setImpactEffect] = useState<{x: number, y: number, id: number, textRotation: number} | null>(null);
   const [particles, setParticles] = useState<Particle[]>([]);
+  const [hasCompleted, setHasCompleted] = useState(false);
   
   // Audio Context Refs
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -171,7 +172,8 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete }) 
     const newHits = hits + 1;
     setHits(newHits);
 
-    if (newHits >= TOTAL_HITS_REQUIRED) {
+    if (newHits >= TOTAL_HITS_REQUIRED && !hasCompleted) {
+      setHasCompleted(true);
       setTimeout(onComplete, 800);
     }
   };
