@@ -96,7 +96,7 @@ function selectModel(webSearch: boolean, retryCount: number): string {
   // GLM-Z1-Flash 不支持 response_format: { type: "json_object" }
   
   if (retryCount === 0) {
-    return "glm-4.7-flash";
+    return "glm-4-flash";
   } else if (retryCount === 1) {
     return "glm-4-flash-250414";
   } else {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { AppStep, Language, VillainData, ChantResponse, ResolutionResponse, VillainRecord } from './types';
 import { TRANSLATIONS, PAYMENT_CONFIG } from './constants';
-import { generateRitualChant, generateResolution } from './services/optimizedGeminiService';
+import { generateRitualChant, generateResolution } from './services/geminiService';
 import { getLocalRecords, saveLocalRecord, deleteLocalRecord } from './services/storageService';
 import LanguageSwitch from './components/LanguageSwitch';
 

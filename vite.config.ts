@@ -29,7 +29,6 @@ export default defineConfig(({ mode }) => {
           output: {
             manualChunks: {
               'vendor': ['react', 'react-dom'],
-              'services': ['./services/optimizedGeminiService']
             }
           }
         },
