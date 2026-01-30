@@ -100,7 +100,7 @@ function selectModel(webSearch: boolean, retryCount: number): string {
   } else if (retryCount === 1) {
     return "glm-4-flash-250414";
   } else {
-    return "glm-4.7-flash";
+    return "glm-4-flash";
   }
 }
 

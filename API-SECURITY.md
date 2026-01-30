@@ -67,7 +67,7 @@ export default {
       };
 
       const payload = {
-        model: "glm-4.7-flash",
+        model: "glm-4-flash",
         messages: messages,
         temperature: 0.7,
         top_p: 0.9,
@@ -190,7 +190,7 @@ export default async function handler(req, res) {
   ];
 
   const payload = {
-    model: "glm-4.7-flash",
+    model: "glm-4-flash",
     messages,
     temperature: 0.7,
     top_p: 0.9,

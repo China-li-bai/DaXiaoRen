@@ -91,12 +91,12 @@ function selectModel(webSearch: boolean, retryCount: number): string {
     }
   } else if (retryCount === 1) {
     if (webSearch) {
-      return "glm-4.7-flash";
+      return "glm-4-flash";
     } else {
       return "glm-4-flash-250414";
     }
   } else {
-    return "glm-4.7-flash";
+    return "glm-4-flash";
   }
 }
 ```

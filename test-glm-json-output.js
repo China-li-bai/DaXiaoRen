@@ -3,7 +3,7 @@ const API_KEY = 'd946d990667549baba87595dadb30b42.5r3iUUtIbhPQ5kwA';
 const MODELS = [
   {
     name: 'GLM-4.7-Flash',
-    modelId: 'glm-4.7-flash',
+    modelId: 'glm-4-flash',
     description: '30B混合思考模型，3B激活参数，2026年1月发布',
     features: ['混合思考', '完全免费', '性能最强', '支持搜索'],
     bestFor: '通用任务、复杂推理、搜索'

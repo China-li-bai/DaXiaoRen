@@ -50,7 +50,7 @@ thinking: {
 
 ```typescript
 const payload: any = {
-  model: "glm-4.7-flash",
+  model: "glm-4-flash",
   messages: messages,
   temperature: 0.7,
   top_p: 0.9,
@@ -137,7 +137,7 @@ const response = await fetch("https://open.bigmodel.cn/api/paas/v4/chat/completi
     "Authorization": `Bearer ${API_KEY}`
   },
   body: JSON.stringify({
-    model: "glm-4.7-flash",
+    model: "glm-4-flash",
     messages: [
       {
         role: "system",

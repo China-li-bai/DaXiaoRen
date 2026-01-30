@@ -26,7 +26,7 @@ async function testScenario(scenario) {
         "Authorization": `Bearer ${API_KEY}`
       },
       body: JSON.stringify({
-        model: "glm-4.7-flash",
+        model: "glm-4-flash",
         messages: [
           {
             role: "system",

@@ -45,7 +45,7 @@ var PROMPTS = {
 };
 async function callZhipuAI(messages, webSearch = false) {
   const payload = {
-    model: "glm-4.7-flash",
+    model: "glm-4-flash",
     messages,
     temperature: 0.7,
     top_p: 0.9,

@@ -3,7 +3,7 @@ const API_KEY = process.env.API_KEY || '';
 const MODELS = [
   {
     name: 'GLM-4.7-Flash',
-    modelId: 'glm-4.7-flash',
+    modelId: 'glm-4-flash',
     description: '30B混合思考模型，2026年1月发布，完全免费'
   },
   {
