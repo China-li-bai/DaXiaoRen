@@ -33,7 +33,6 @@ export enum AppStep {
 
 export interface ChantResponse {
   chantLines: string[];
-  ritualInstruction: string;
 }
 
 export interface ResolutionResponse {
@@ -43,7 +42,6 @@ export interface ResolutionResponse {
 
 export interface IdentifyResponse {
   name: string;
-  titleOrRole: string;
   reason: string;
 }
 

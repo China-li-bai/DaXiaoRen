@@ -96,7 +96,7 @@ var worker_default = {
         const systemPrompt = PROMPTS.identify[lang] || PROMPTS.identify.zh;
         const messages = [
           { role: "system", content: systemPrompt },
-          { role: "user", content: lang === "en" ? `Who is: "${query}"? Return JSON with 'name', 'titleOrRole', 'reason'.` : `\u8BF7\u641C\u7D22\u5E76\u56DE\u7B54\uFF1A"${query}" \u662F\u8C01\uFF1F\u8BF7\u8FD4\u56DEJSON\u5BF9\u8C61\uFF0C\u5305\u542B 'name', 'titleOrRole', 'reason'\u3002` }
+          { role: "user", content: lang === "en" ? `Who is: "${query}"? Return JSON with 'name' and 'reason'.` : `\u8BF7\u641C\u7D22\u5E76\u56DE\u7B54\uFF1A"${query}" \u662F\u8C01\uFF1F\u8BF7\u8FD4\u56DEJSON\u5BF9\u8C61\uFF0C\u5305\u542B 'name' \u548C 'reason'\u3002` }
         ];
         const result = await callZhipuAI(messages, true);
         return new Response(result, {
@@ -111,7 +111,7 @@ var worker_default = {
         const systemPrompt = PROMPTS.ritual[lang] || PROMPTS.ritual.zh;
         const messages = [
           { role: "system", content: systemPrompt },
-          { role: "user", content: lang === "en" ? `Target: '${villain.name}' (${villain.type}). Grievance: ${villain.reason || "General annoyance"}. Return JSON with 'chantLines' (array) and 'ritualInstruction' (string).` : `\u5BF9\u8C61\uFF1A'${villain.name}' (${villain.type})\u3002\u539F\u56E0\uFF1A${villain.reason || "\u8BF8\u4E8B\u4E0D\u987A"}\u3002\u8BF7\u8FD4\u56DEJSON\u5BF9\u8C61\uFF0C\u5305\u542B 'chantLines' (4\u53E5\u62BC\u97F5\u53E3\u8BC0\u6570\u7EC4) \u548C 'ritualInstruction' (\u51FB\u6253\u6307\u5BFC)\u3002` }
+          { role: "user", content: lang === "en" ? `Target: '${villain.name}' (${villain.type}). Grievance: ${villain.reason || "General annoyance"}. Return JSON with 'chantLines' (array of 4 rhyming lines).` : `\u5BF9\u8C61\uFF1A'${villain.name}' (${villain.type})\u3002\u539F\u56E0\uFF1A${villain.reason || "\u8BF8\u4E8B\u4E0D\u987A"}\u3002\u8BF7\u8FD4\u56DEJSON\u5BF9\u8C61\uFF0C\u5305\u542B 'chantLines' (4\u53E5\u62BC\u97F5\u53E3\u8BC0\u6570\u7EC4)\u3002` }
         ];
         const result = await callZhipuAI(messages, false);
         return new Response(result, {

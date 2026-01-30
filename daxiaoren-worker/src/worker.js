@@ -79,7 +79,7 @@ export default {
         
         const messages = [
           { role: "system", content: systemPrompt },
-          { role: "user", content: lang === 'en' ? `Who is: "${query}"? Return JSON with 'name', 'titleOrRole', 'reason'.` : `请搜索并回答："${query}" 是谁？请返回JSON对象，包含 'name', 'titleOrRole', 'reason'。` }
+          { role: "user", content: lang === 'en' ? `Who is: "${query}"? Return JSON with 'name' and 'reason'.` : `请搜索并回答："${query}" 是谁？请返回JSON对象，包含 'name' 和 'reason'。` }
         ];
 
         const result = await callZhipuAI(messages, true);
@@ -98,7 +98,7 @@ export default {
         
         const messages = [
           { role: "system", content: systemPrompt },
-          { role: "user", content: lang === 'en' ? `Target: '${villain.name}' (${villain.type}). Grievance: ${villain.reason || 'General annoyance'}. Return JSON with 'chantLines' (array) and 'ritualInstruction' (string).` : `对象：'${villain.name}' (${villain.type})。原因：${villain.reason || '诸事不顺'}。请返回JSON对象，包含 'chantLines' (4句押韵口诀数组) 和 'ritualInstruction' (击打指导)。` }
+          { role: "user", content: lang === 'en' ? `Target: '${villain.name}' (${villain.type}). Grievance: ${villain.reason || 'General annoyance'}. Return JSON with 'chantLines' (array of 4 rhyming lines).` : `对象：'${villain.name}' (${villain.type})。原因：${villain.reason || '诸事不顺'}。请返回JSON对象，包含 'chantLines' (4句押韵口诀数组)。` }
         ];
 
         const result = await callZhipuAI(messages, false);

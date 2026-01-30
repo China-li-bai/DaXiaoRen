@@ -40,7 +40,6 @@ export const identifyVillain = async (
     console.error('Identify Villain Error:', error);
     return {
       name: lang === 'en' ? "Unknown Villain" : "未知小人",
-      titleOrRole: "N/A",
       reason: lang === 'en' ? "Could not identify due to network error." : "网络错误，无法识别。"
     };
   }
@@ -58,8 +57,7 @@ export const generateRitualChant = async (
     return {
       chantLines: lang === 'en' 
         ? ["Beat the villain!", "Bad luck be gone!", "Strike with power!", "New day is born!"]
-        : ["打你个小人头！", "霉运通通走！", "打你个小人脚！", "好运自然有！"],
-      ritualInstruction: lang === 'en' ? "Hit hard!" : "用力打！"
+        : ["打你个小人头！", "霉运通通走！", "打你个小人脚！", "好运自然有！"]
     };
   }
 };
