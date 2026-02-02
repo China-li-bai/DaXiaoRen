@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { VillainData, VillainType, Language } from '../types';
 import { TRANSLATIONS } from '../constants';
-import { identifyVillain } from '../services/workerService';
+import { identifyVillain } from '../services/geminiService';
 
 interface Props {
   lang: Language;
@@ -21,11 +21,23 @@ const VillainForm: React.FC<Props> = ({ lang, onSubmit }) => {
   const [type, setType] = useState<VillainType>(VillainType.BOSS);
   const [reason, setReason] = useState('');
   const [imageUrl, setImageUrl] = useState<string | undefined>(undefined);
+  
+  // Compliance Warning
+  const [showWarning, setShowWarning] = useState(false);
+
+  const checkCompliance = (input: string) => {
+      const sensitiveKeywords = ['president', 'minister', 'government', 'ccp', 'party', '习', '李', '政府', '党', '国家'];
+      const hasSensitive = sensitiveKeywords.some(k => input.toLowerCase().includes(k));
+      setShowWarning(hasSensitive);
+      return hasSensitive;
+  };
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
     
+    if (checkCompliance(searchQuery)) return; // Stop if sensitive
+
     setIsSearching(true);
     const result = await identifyVillain(searchQuery, lang);
     setIsSearching(false);
@@ -50,6 +62,8 @@ const VillainForm: React.FC<Props> = ({ lang, onSubmit }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
+    if (checkCompliance(name)) return; // Stop if sensitive
+    
     onSubmit({ name, type, reason, imageUrl });
   };
 
@@ -74,6 +88,15 @@ const VillainForm: React.FC<Props> = ({ lang, onSubmit }) => {
         </button>
       </div>
 
+      {/* Compliance Warning Banner */}
+      {showWarning && (
+          <div className="mb-4 bg-red-900/50 border border-red-500 text-red-200 p-3 rounded text-xs">
+              {lang === 'en' 
+                ? "⚠️ Safety Check: Please focus on personal grievances (Bad Boss, Ex, Habits). Avoid political or public figures to keep this temple open." 
+                : "⚠️ 善意提醒：请勿输入政治人物或敏感词汇。打小人仅限私人恩怨（如老板、前任），请共同维护神庙安宁。"}
+          </div>
+      )}
+
       {mode === 'SEARCH' ? (
          <form onSubmit={handleSearch} className="space-y-4">
            <div>
@@ -83,14 +106,17 @@ const VillainForm: React.FC<Props> = ({ lang, onSubmit }) => {
              <input
                type="text"
                value={searchQuery}
-               onChange={(e) => setSearchQuery(e.target.value)}
-               placeholder={lang === 'en' ? "e.g., The Mayor of Gotham, My CEO" : "例如：2026年欺负老百姓的小人"}
+               onChange={(e) => {
+                   setSearchQuery(e.target.value);
+                   if(showWarning) setShowWarning(false);
+               }}
+               placeholder={lang === 'en' ? "e.g., My Micromanaging Boss" : "例如：我的老板"}
                className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
              />
              <p className="text-xs text-slate-500 mt-2">
                {lang === 'en' 
                  ? "AI will search Google to find the name and role." 
-                 : "AI 将通过搜索自动查找人名和职位。"}
+                 : "AI 将通过谷歌搜索自动查找人名和职位。"}
              </p>
            </div>
            <button
@@ -118,7 +144,10 @@ const VillainForm: React.FC<Props> = ({ lang, onSubmit }) => {
             <input
               type="text"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                  setName(e.target.value);
+                  if(showWarning) setShowWarning(false);
+              }}
               placeholder={t.placeholderName}
               className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
               required

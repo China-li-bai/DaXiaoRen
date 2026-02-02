@@ -24,7 +24,7 @@ export const TRANSLATIONS = {
     generating: "Summoning the Spirits...",
     hitInstruction: "Tap the Villain to Strike!",
     hitsRemaining: "Hits Remaining",
-    finish: "Banish Evil!",
+    finish: "Ritual Complete",
     resolving: "Cleansing the Aura...",
     playAgain: "Perform Another Ritual",
     disclaimer: "Disclaimer: This application is a digital game designed for entertainment and stress relief only. It is not intended to promote hatred, violence, or genuine superstition. Please use responsibly.",
@@ -46,13 +46,31 @@ export const TRANSLATIONS = {
     loadRecord: "Summon Again",
     deleteRecord: "Burn Record",
     openHistory: "View Records",
+    screenshotShare: "Screenshot this Talisman to Share Luck",
+    liveTicker: [
+      "User 29** just banished a Toxic Boss.",
+      "Someone in NY just cleared Bad Luck.",
+      "A student just hit Procrastination 100 times.",
+      "User 88** just sealed a Fake Friend.",
+      "Spiritual energy is high today."
+    ],
     types: {
       [VillainType.BOSS]: "Toxic Boss / Colleague",
       [VillainType.EX_PARTNER]: "Toxic Ex-Partner",
       [VillainType.FAKE_FRIEND]: "Backstabber / Fake Friend",
       [VillainType.BAD_HABIT]: "Bad Habit / Addiction",
       [VillainType.GENERAL_ANXIETY]: "General Anxiety / Bad Luck",
-    }
+    },
+    // New Social Translations
+    shareTitle: "Call for Backup!",
+    shareDesc: "Invite friends to help you smash this villain.",
+    shareMessage: "I can't take it anymore! Help me beat '{name}' in this digital ritual. Click to join the fight!",
+    copied: "Link Copied!",
+    assistWelcome: "⚠️ Backup Requested",
+    assistDesc: "Your friend needs your help to banish '{name}'.",
+    assistAction: "Help Smash It!",
+    youHelped: "You Helped Banish the Evil!",
+    createYourOwn: "Start My Own Ritual",
   },
   zh: {
     title: "打小人在线",
@@ -68,7 +86,7 @@ export const TRANSLATIONS = {
     generating: "正在请神...",
     hitInstruction: "点击小人，用力打！",
     hitsRemaining: "剩余击打次数",
-    finish: "驱除霉运！",
+    finish: "仪式完成",
     resolving: "净化磁场...",
     playAgain: "再打一次",
     disclaimer: "免责声明：本应用仅为提供心理宣泄与娱乐的数字游戏，不提倡任何形式的仇恨、暴力或封建迷信。请理性使用，切勿沉迷。",
@@ -90,13 +108,33 @@ export const TRANSLATIONS = {
     loadRecord: "拖出再打",
     deleteRecord: "销毁记录",
     openHistory: "查看小人名册",
+    screenshotShare: "截图保存此符 · 分享转运",
+    liveTicker: [
+      "北京网友 刚刚暴打了 缺德前任",
+      "上海网友 刚刚封印了 唠叨上司",
+      "广州网友 正在清理 职场小人",
+      "深圳网友 刚刚击退了 水逆霉运",
+      "杭州网友 刚刚打了 虚伪朋友 50下",
+      "成都网友 刚刚消除了 焦虑情绪",
+      "今日香火旺盛，宜打小人"
+    ],
     types: {
       [VillainType.BOSS]: "职场小人 / 恶霸老板",
       [VillainType.EX_PARTNER]: "烂桃花 / 前任",
       [VillainType.FAKE_FRIEND]: "虚伪朋友 / 背后捅刀",
       [VillainType.BAD_HABIT]: "坏习惯 / 自身惰性",
       [VillainType.GENERAL_ANXIETY]: "水逆 / 焦虑 / 霉运",
-    }
+    },
+    // New Social Translations
+    shareTitle: "急急如律令 · 摇人助阵",
+    shareDesc: "一个人的力量不够？召唤好友一起来打！",
+    shareMessage: "气死我了！我正在打小人【{name}】，快来帮我补两刀！点击链接直接开打！",
+    copied: "链接已复制，快发给朋友！",
+    assistWelcome: "⚠️ 紧急助阵模式",
+    assistDesc: "你的朋友火力不足，急需你帮忙一起封印【{name}】！",
+    assistAction: "替天行道，打！",
+    youHelped: "助阵成功 · 功德无量",
+    createYourOwn: "我也要打小人",
   }
 };
 

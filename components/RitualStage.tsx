@@ -7,6 +7,7 @@ interface Props {
   villain: VillainData;
   chantData: ChantResponse;
   onComplete: () => void;
+  isAssistMode?: boolean;
 }
 
 interface Particle {
@@ -18,7 +19,7 @@ interface Particle {
   color: string;
 }
 
-const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete }) => {
+const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, isAssistMode = false }) => {
   const t = TRANSLATIONS[lang];
   const [hits, setHits] = useState(0);
   const [lastHitTime, setLastHitTime] = useState(0);
@@ -26,6 +27,11 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete }) 
   const [isShaking, setIsShaking] = useState(false);
   const [impactEffect, setImpactEffect] = useState<{x: number, y: number, id: number, textRotation: number} | null>(null);
   const [particles, setParticles] = useState<Particle[]>([]);
+  const [showShareTooltip, setShowShareTooltip] = useState(false);
+  
+  // Combo System
+  const [combo, setCombo] = useState(0);
+  const [showCombo, setShowCombo] = useState(false);
   
   // Audio Context Refs
   const audioCtxRef = useRef<AudioContext | null>(null);
@@ -125,6 +131,15 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete }) 
     const now = Date.now();
     // Allow faster hitting (reduced debounce from 100ms to 60ms) for frenzy mode
     if (now - lastHitTime < 60) return; 
+    
+    // Combo Logic
+    if (now - lastHitTime < 1000) {
+        setCombo(prev => prev + 1);
+        setShowCombo(true);
+    } else {
+        setCombo(1);
+        setShowCombo(true);
+    }
     setLastHitTime(now);
 
     const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
@@ -176,6 +191,33 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete }) 
     }
   };
 
+  const handleShare = async (e: React.MouseEvent) => {
+    e.stopPropagation(); // Don't trigger hit
+    const url = new URL(window.location.href);
+    url.searchParams.set('mode', 'assist');
+    url.searchParams.set('name', villain.name);
+    url.searchParams.set('type', villain.type);
+    url.searchParams.set('reason', villain.reason);
+    
+    const shareData = {
+      title: t.shareTitle,
+      text: t.shareMessage.replace('{name}', villain.name),
+      url: url.toString(),
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        await navigator.clipboard.writeText(shareData.text + " " + shareData.url);
+        setShowShareTooltip(true);
+        setTimeout(() => setShowShareTooltip(false), 2000);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   // Reset impact effect quickly
   useEffect(() => {
     if (impactEffect) {
@@ -183,6 +225,14 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete }) 
       return () => clearTimeout(timer);
     }
   }, [impactEffect]);
+  
+  // Reset Combo text fade out
+  useEffect(() => {
+      if (showCombo) {
+          const timer = setTimeout(() => setShowCombo(false), 2000);
+          return () => clearTimeout(timer);
+      }
+  }, [showCombo, combo]);
 
   const progress = (hits / TOTAL_HITS_REQUIRED) * 100;
   const isFinished = hits >= TOTAL_HITS_REQUIRED;
@@ -190,6 +240,13 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete }) 
   return (
     <div className="flex flex-col items-center justify-between h-full w-full max-w-2xl mx-auto relative select-none">
       
+      {/* Assist Mode Banner */}
+      {isAssistMode && (
+        <div className="absolute top-[-40px] z-50 bg-red-600 text-white px-4 py-1 rounded-full text-sm font-bold animate-bounce shadow-lg border border-red-400">
+           {t.assistWelcome}
+        </div>
+      )}
+
       {/* Particles Rendering */}
       {particles.map(p => (
         <div 
@@ -224,6 +281,13 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete }) 
       >
         {/* Background Aura */}
         <div className={`absolute inset-0 bg-gradient-to-b from-transparent to-red-900/20 rounded-full blur-3xl transition-opacity duration-300 ${isFinished ? 'opacity-0' : 'opacity-100'}`} />
+        
+        {/* COMBO COUNTER (New Social/Game Feature) */}
+        <div className={`absolute top-0 right-0 z-40 transform transition-all duration-200 pointer-events-none ${showCombo ? 'scale-110 opacity-100' : 'scale-50 opacity-0'}`}>
+            <div className="text-4xl font-black text-yellow-400 italic drop-shadow-[4px_4px_0_rgba(185,28,28,1)] stroke-black" style={{ textShadow: '0 0 10px red' }}>
+                {combo} COMBO!
+            </div>
+        </div>
 
         {/* The Paper Villain */}
         <div 
@@ -315,18 +379,39 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete }) 
         )}
       </div>
 
-      {/* Progress & Instruction */}
-      <div className="w-full text-center mt-6 z-30">
-        <p className="text-slate-300 text-sm mb-2 uppercase tracking-widest animate-pulse font-bold">{t.hitInstruction}</p>
-        <div className="w-full bg-slate-800 h-6 rounded-full overflow-hidden border border-slate-600 shadow-inner relative">
-           <div className="absolute inset-0 flex items-center justify-center z-10 text-[10px] font-bold text-white tracking-widest mix-blend-overlay">
-             {hits} / {TOTAL_HITS_REQUIRED}
-           </div>
-          <div 
-            className="bg-gradient-to-r from-amber-600 to-red-600 h-full transition-all duration-75 ease-out"
-            style={{ width: `${progress}%` }}
-          />
+      {/* Progress & Instruction & Share */}
+      <div className="w-full text-center mt-6 z-30 flex flex-col gap-4">
+        <div>
+            <p className="text-slate-300 text-sm mb-2 uppercase tracking-widest animate-pulse font-bold">
+                {isAssistMode ? t.assistAction.replace('{name}', villain.name) : t.hitInstruction}
+            </p>
+            <div className="w-full bg-slate-800 h-6 rounded-full overflow-hidden border border-slate-600 shadow-inner relative">
+            <div className="absolute inset-0 flex items-center justify-center z-10 text-[10px] font-bold text-white tracking-widest mix-blend-overlay">
+                {hits} / {TOTAL_HITS_REQUIRED}
+            </div>
+            <div 
+                className="bg-gradient-to-r from-amber-600 to-red-600 h-full transition-all duration-75 ease-out"
+                style={{ width: `${progress}%` }}
+            />
+            </div>
         </div>
+
+        {/* SOS Button (Only show if NOT in assist mode and not finished) */}
+        {!isAssistMode && !isFinished && (
+            <div className="relative">
+                <button 
+                    onClick={handleShare}
+                    className="w-full py-2 bg-slate-700/50 hover:bg-slate-700 border border-slate-500 rounded text-xs text-amber-500 font-bold uppercase tracking-widest transition-colors flex items-center justify-center gap-2"
+                >
+                    <span>📣</span> {t.shareTitle}
+                </button>
+                {showShareTooltip && (
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-black text-white text-xs rounded whitespace-nowrap">
+                        {t.copied}
+                    </div>
+                )}
+            </div>
+        )}
       </div>
 
     </div>
