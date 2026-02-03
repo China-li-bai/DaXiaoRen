@@ -1,15 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy } from 'react';
 import { AppStep, Language, VillainData, ChantResponse, ResolutionResponse, VillainRecord, VillainType } from './types';
 import { TRANSLATIONS, PAYMENT_CONFIG } from './constants';
 import { generateRitualChant, generateResolution } from './services/workerService';
 import { getLocalRecords, saveLocalRecord, deleteLocalRecord } from './services/storageService';
 import LanguageSwitch from './components/LanguageSwitch';
-import VillainForm from './components/VillainForm';
-import RitualStage from './components/RitualStage';
-import Conclusion from './components/Conclusion';
-import PaymentModal from './components/PaymentModal';
-import HistoryDrawer from './components/HistoryDrawer';
 import GlobalStats from './components/GlobalStats';
+
+const VillainForm = lazy(() => import('./components/VillainForm'));
+const RitualStage = lazy(() => import('./components/RitualStage'));
+const Conclusion = lazy(() => import('./components/Conclusion'));
+const PaymentModal = lazy(() => import('./components/PaymentModal'));
+const HistoryDrawer = lazy(() => import('./components/HistoryDrawer'));
+const ShareModal = lazy(() => import('./components/ShareModal'));
 
 // Live Ticker Component
 const LiveTicker: React.FC<{ lang: Language }> = ({ lang }) => {
@@ -58,6 +60,10 @@ export default function App() {
   // History System
   const [showHistory, setShowHistory] = useState(false);
   const [records, setRecords] = useState<VillainRecord[]>([]);
+  
+  // Share System
+  const [showShare, setShowShare] = useState(false);
+  const [pendingVillain, setPendingVillain] = useState<VillainData | null>(null);
 
   const t = TRANSLATIONS[lang];
 
@@ -71,10 +77,10 @@ export default function App() {
 
     // Check for "Assist Mode" params
     const params = new URLSearchParams(window.location.search);
-    const assistMode = params.get('mode') === 'assist';
-    const sharedName = params.get('name');
+    const isAssist = params.get('assist');
+    const sharedName = params.get('villain');
     
-    if (assistMode && sharedName) {
+    if (isAssist && sharedName) {
       console.log("Entering Assist Mode for:", sharedName);
       const sharedType = (params.get('type') as VillainType) || VillainType.BOSS;
       const sharedReason = params.get('reason') || '';
@@ -146,7 +152,9 @@ export default function App() {
     const updatedRecords = saveLocalRecord(newRecord);
     setRecords(updatedRecords);
 
-    setStep(AppStep.RITUAL);
+    // Show share modal before entering ritual
+    setPendingVillain(data);
+    setShowShare(true);
   };
 
   const handleHistorySelect = (record: VillainRecord) => {
@@ -276,11 +284,19 @@ export default function App() {
                  <span className="text-4xl">🐯</span>
                </div>
 
-               <div className="bg-slate-900/60 p-5 rounded-lg border border-slate-700 backdrop-blur-sm text-left mb-8 shadow-xl">
-                  <p className="text-xs text-slate-400 mb-4 leading-relaxed font-sans">
-                    {t.disclaimer}
-                  </p>
-                  <label className="flex items-center gap-3 cursor-pointer group">
+               <div className="bg-slate-900/80 p-5 rounded-lg border border-amber-600/40 backdrop-blur-sm text-left mb-8 shadow-xl max-w-lg mx-auto">
+                  <div className="flex items-center gap-2 mb-3 text-amber-400">
+                    <span className="text-lg">⚠️</span>
+                    <span className="font-bold text-sm uppercase tracking-wider">{t.disclaimerTitle || 'Disclaimer'}</span>
+                  </div>
+                  <div className="bg-slate-800/50 p-3 rounded text-xs text-slate-300 leading-relaxed font-sans max-h-48 overflow-y-auto">
+                    {t.disclaimer.split('\n').map((line, i) => (
+                      <p key={i} className={line.startsWith('1') || line.startsWith('2') || line.startsWith('3') || line.startsWith('4') || line.startsWith('5') ? 'mt-2 first:mt-0' : ''}>
+                        {line}
+                      </p>
+                    ))}
+                  </div>
+                  <label className="flex items-center gap-3 cursor-pointer group mt-4">
                     <div className="relative flex items-center">
                       <input 
                         type="checkbox" 
@@ -288,7 +304,7 @@ export default function App() {
                         onChange={(e) => setHasAgreed(e.target.checked)}
                         className="peer sr-only" 
                       />
-                      <div className="w-5 h-5 border-2 border-slate-500 rounded bg-slate-800 peer-checked:bg-amber-500 peer-checked:border-amber-500 transition-all"></div>
+                      <div className="w-5 h-5 border-2 border-amber-500 rounded bg-slate-800 peer-checked:bg-amber-500 peer-checked:border-amber-500 transition-all"></div>
                       <svg className="absolute top-0.5 left-0.5 w-4 h-4 text-slate-900 opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="20 6 9 17 4 12"></polyline>
                       </svg>
@@ -373,6 +389,21 @@ export default function App() {
         onSelect={handleHistorySelect}
         onDelete={handleHistoryDelete}
       />
+
+      {/* Share Modal */}
+      {showShare && pendingVillain && (
+        <ShareModal
+          lang={lang}
+          villain={pendingVillain}
+          onClose={() => {
+            setShowShare(false);
+            // Enter ritual after closing share modal
+            if (villain && chant) {
+              setStep(AppStep.RITUAL);
+            }
+          }}
+        />
+      )}
 
       <footer className="z-10 mt-8 text-slate-600 text-xs text-center pb-4">
         © {new Date().getFullYear()} VillainSmash. 

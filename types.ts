@@ -48,3 +48,20 @@ export interface IdentifyResponse {
 }
 
 export type PaymentRegion = 'CHINA' | 'GLOBAL';
+
+export interface AssistSession {
+  id: string;
+  hostName: string;
+  villain: VillainData;
+  chant: ChantResponse;
+  createdAt: number;
+  helpers: string[];
+}
+
+export interface ShareConfig {
+  title: string;
+  description: string;
+  url: string;
+}
+
+export type AssistMode = 'HOST' | 'HELPER' | null;
