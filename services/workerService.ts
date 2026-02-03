@@ -1,5 +1,4 @@
 import { VillainData, Language, ChantResponse, ResolutionResponse, IdentifyResponse } from '../types';
-import { debounce } from 'lodash';
 
 const WORKER_URL = 'https://glm.api.66666618.xyz';
 
