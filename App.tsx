@@ -48,7 +48,6 @@ export default function App() {
   const [villain, setVillain] = useState<VillainData | null>(null);
   const [chant, setChant] = useState<ChantResponse | null>(null);
   const [resolution, setResolution] = useState<ResolutionResponse | null>(null);
-  const [isResolving, setIsResolving] = useState(false);
   const [isAssistMode, setIsAssistMode] = useState(false);
   
   // Credits System
@@ -188,25 +187,23 @@ export default function App() {
   };
 
   const handleRitualComplete = async () => {
-    if (isResolving) return;
-    setIsResolving(true);
-    
     setStep(AppStep.RESOLVING);
     
     if (credits > 0 && !isAssistMode) {
+        // Only deduct credits for the owner, helpers play for free (viral hook)
         saveCredits(credits - 1);
     }
 
     if (villain) {
+      // For assist mode, we can use a simpler/mock resolution or call API
       const res = await generateResolution(villain, lang);
       setResolution(res);
       setStep(AppStep.CONCLUSION);
     }
-    setIsResolving(false);
   };
 
   const handleReset = () => {
-    setIsResolving(false);
+    // If they were in assist mode, now they become a regular user
     setIsAssistMode(false); 
     setVillain(null);
     setChant(null);
