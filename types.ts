@@ -48,3 +48,21 @@ export interface IdentifyResponse {
 }
 
 export type PaymentRegion = 'CHINA' | 'GLOBAL';
+
+// --- NEW REALTIME TYPES ---
+
+export interface RitualSession {
+  id: string;
+  villain_name: string;
+  villain_type: VillainType;
+  reason: string;
+  status: 'ACTIVE' | 'COMPLETED';
+  total_hits: number;
+  host_client_id?: string;
+}
+
+export interface RealtimeHitPayload {
+  type: 'HIT';
+  damage: number;
+  sender: 'HOST' | 'GUEST';
+}

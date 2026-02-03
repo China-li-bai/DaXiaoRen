@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { VillainData, Language, ChantResponse } from '../types';
 import { TRANSLATIONS, TOTAL_HITS_REQUIRED } from '../constants';
+import { subscribeToRitual, broadcastHit, completeRitualSession } from '../services/ritualService';
 
 interface Props {
   lang: Language;
@@ -8,6 +9,8 @@ interface Props {
   chantData: ChantResponse;
   onComplete: () => void;
   isAssistMode?: boolean;
+  ritualId?: string | null;
+  onTap?: () => void; // New prop for leaderboard tracking
 }
 
 interface Particle {
@@ -19,7 +22,7 @@ interface Particle {
   color: string;
 }
 
-const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, isAssistMode = false }) => {
+const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, isAssistMode = false, ritualId, onTap }) => {
   const t = TRANSLATIONS[lang];
   const [hits, setHits] = useState(0);
   const [lastHitTime, setLastHitTime] = useState(0);
@@ -29,13 +32,50 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
   const [particles, setParticles] = useState<Particle[]>([]);
   const [showShareTooltip, setShowShareTooltip] = useState(false);
   
-  // Combo System
+  // Realtime & Social
   const [combo, setCombo] = useState(0);
   const [showCombo, setShowCombo] = useState(false);
-  
+  const [friendJoined, setFriendJoined] = useState(false);
+  const channelRef = useRef<any>(null);
+
   // Audio Context Refs
   const audioCtxRef = useRef<AudioContext | null>(null);
   const noiseBufferRef = useRef<AudioBuffer | null>(null);
+
+  // Setup Realtime Subscription
+  useEffect(() => {
+    if (ritualId) {
+        console.log("Subscribing to Ritual:", ritualId);
+        const channel = subscribeToRitual(
+            ritualId,
+            (payload) => {
+                // When we receive a hit from someone else
+                triggerRemoteHitEffect();
+                setHits(prev => prev + 1); // Increment local counter
+            },
+            () => {
+                setFriendJoined(true);
+                setTimeout(() => setFriendJoined(false), 3000); // Hide banner after 3s
+            }
+        );
+        channelRef.current = channel;
+
+        return () => {
+            if (channelRef.current) channelRef.current.unsubscribe();
+        };
+    }
+  }, [ritualId]);
+
+  // Handle completion (sync to DB)
+  useEffect(() => {
+    if (hits >= TOTAL_HITS_REQUIRED) {
+        if (ritualId && !isAssistMode) {
+            // Only host marks as complete in DB to avoid race conditions
+            completeRitualSession(ritualId); 
+        }
+        setTimeout(onComplete, 800);
+    }
+  }, [hits, ritualId, isAssistMode]);
 
   const initAudio = () => {
     if (!audioCtxRef.current) {
@@ -43,8 +83,8 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
       if (AudioContext) {
         audioCtxRef.current = new AudioContext();
         
-        // Create a buffer for White Noise (reused for the "Slap" friction sound)
-        const bufferSize = audioCtxRef.current.sampleRate * 2; // 2 seconds buffer
+        // Create a buffer for White Noise
+        const bufferSize = audioCtxRef.current.sampleRate * 2;
         const buffer = audioCtxRef.current.createBuffer(1, bufferSize, audioCtxRef.current.sampleRate);
         const data = buffer.getChannelData(0);
         for (let i = 0; i < bufferSize; i++) {
@@ -58,7 +98,6 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
     }
   };
 
-  // Synthesize a "Slipper Slap" sound
   const playSlipperHit = () => {
     initAudio();
     const ctx = audioCtxRef.current;
@@ -66,23 +105,18 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
     if (!ctx || !buffer) return;
 
     const t = ctx.currentTime;
-    
-    // Randomize pitch/tone slightly for realism
-    const randomDetune = (Math.random() - 0.5) * 200; // +/- 100 cents
+    // --- Audio Synthesis Code ---
+    const randomDetune = (Math.random() - 0.5) * 200;
     const randomDecay = 0.08 + Math.random() * 0.05;
 
-    // --- Layer 1: The "Crack" (High Freq Noise) ---
-    // Simulates the slipper hitting the paper/surface
     const noiseSrc = ctx.createBufferSource();
     noiseSrc.buffer = buffer;
-    
     const noiseFilter = ctx.createBiquadFilter();
     noiseFilter.type = 'lowpass';
-    noiseFilter.frequency.setValueAtTime(1500, t); // Dull the noise slightly
-    
+    noiseFilter.frequency.setValueAtTime(1500, t);
     const noiseGain = ctx.createGain();
     noiseGain.gain.setValueAtTime(0.8, t);
-    noiseGain.gain.exponentialRampToValueAtTime(0.01, t + 0.1); // Fast decay
+    noiseGain.gain.exponentialRampToValueAtTime(0.01, t + 0.1);
 
     noiseSrc.connect(noiseFilter);
     noiseFilter.connect(noiseGain);
@@ -90,48 +124,54 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
     noiseSrc.start(t);
     noiseSrc.stop(t + 0.1);
 
-    // --- Layer 2: The "Thud" (Body Impact) ---
-    // Simulates the force of the hit
     const osc = ctx.createOscillator();
     osc.type = 'triangle';
-    osc.frequency.setValueAtTime(200 + (randomDetune / 5), t); // Start pitch
-    osc.frequency.exponentialRampToValueAtTime(40, t + randomDecay); // Pitch drop (Kick drum style)
-    
+    osc.frequency.setValueAtTime(200 + (randomDetune / 5), t);
+    osc.frequency.exponentialRampToValueAtTime(40, t + randomDecay);
     const oscGain = ctx.createGain();
     oscGain.gain.setValueAtTime(1.0, t);
     oscGain.gain.exponentialRampToValueAtTime(0.01, t + randomDecay + 0.05);
 
-    // Distortion to make it sound "dirty" (like hitting a brick)
-    const distortion = ctx.createWaveShaper();
-    distortion.curve = makeDistortionCurve(400); // 400 is amount
-    distortion.oversample = '4x';
-
-    osc.connect(distortion);
-    distortion.connect(oscGain);
+    osc.connect(oscGain);
     oscGain.connect(ctx.destination);
-    
     osc.start(t);
     osc.stop(t + 0.2);
   };
 
-  // Utility for distortion curve
-  function makeDistortionCurve(amount: number) {
-    const k = typeof amount === 'number' ? amount : 50;
-    const n_samples = 44100;
-    const curve = new Float32Array(n_samples);
-    const deg = Math.PI / 180;
-    for (let i = 0; i < n_samples; ++i) {
-      const x = (i * 2) / n_samples - 1;
-      curve[i] = (3 + k) * x * 20 * deg / (Math.PI + k * Math.abs(x));
-    }
-    return curve;
-  }
+  // Called when receiving a broadcast event
+  const triggerRemoteHitEffect = () => {
+      setIsShaking(true);
+      setTimeout(() => setIsShaking(false), 150);
+      playSlipperHit();
+      // Add random remote particles
+      const newParticles: Particle[] = [];
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2;
+      for (let i = 0; i < 4; i++) {
+         const angle = Math.random() * Math.PI * 2;
+         const dist = 60 + Math.random() * 80;
+         newParticles.push({
+            id: Math.random(),
+            x: centerX + (Math.random() * 100 - 50),
+            y: centerY + (Math.random() * 100 - 50),
+            tx: Math.cos(angle) * dist + 'px',
+            ty: Math.sin(angle) * dist + 'px',
+            color: '#ef4444' // Red for friend hits
+         });
+      }
+      setParticles(prev => [...prev, ...newParticles]);
+      setTimeout(() => {
+         setParticles(prev => prev.filter(p => !newParticles.includes(p)));
+      }, 1000);
+  };
 
   const handleHit = (e: React.MouseEvent | React.TouchEvent) => {
     const now = Date.now();
-    // Allow faster hitting (reduced debounce from 100ms to 60ms) for frenzy mode
     if (now - lastHitTime < 60) return; 
     
+    // Notify Leaderboard Widget (if callback exists)
+    if (onTap) onTap();
+
     // Combo Logic
     if (now - lastHitTime < 1000) {
         setCombo(prev => prev + 1);
@@ -145,23 +185,13 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
     const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
     const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
     
-    // 1. Play Realistic Slap
     playSlipperHit();
-
-    // 2. Visual Shake
     setIsShaking(true);
     setTimeout(() => setIsShaking(false), 150);
 
-    // 3. Visual Impact (Shoe + Text)
     setShoeRotation(Math.random() * 60 - 30); 
-    setImpactEffect({ 
-      x: clientX, 
-      y: clientY, 
-      id: now,
-      textRotation: Math.random() * 40 - 20 
-    });
+    setImpactEffect({ x: clientX, y: clientY, id: now, textRotation: Math.random() * 40 - 20 });
 
-    // 4. Particles (Add some "paper scraps" or sparks)
     const newParticles: Particle[] = [];
     for (let i = 0; i < 6; i++) {
       const angle = Math.random() * Math.PI * 2;
@@ -172,7 +202,7 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
         y: clientY,
         tx: Math.cos(angle) * dist + 'px',
         ty: Math.sin(angle) * dist + 'px',
-        color: ['#fff', '#fbbf24', '#ef4444'][Math.floor(Math.random()*3)] // White/Gold/Red
+        color: ['#fff', '#fbbf24', '#ef4444'][Math.floor(Math.random()*3)]
       });
     }
     setParticles(prev => [...prev, ...newParticles]);
@@ -180,24 +210,28 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
         setParticles(prev => prev.filter(p => !newParticles.includes(p)));
     }, 1000);
 
-    // 5. Haptic feedback (Stronger pattern)
     if (navigator.vibrate) navigator.vibrate(50);
 
-    const newHits = hits + 1;
-    setHits(newHits);
+    setHits(prev => prev + 1);
 
-    if (newHits >= TOTAL_HITS_REQUIRED) {
-      setTimeout(onComplete, 800);
+    // BROADCAST TO OTHERS
+    if (ritualId && channelRef.current) {
+        broadcastHit(channelRef.current, !isAssistMode);
     }
   };
 
   const handleShare = async (e: React.MouseEvent) => {
-    e.stopPropagation(); // Don't trigger hit
+    e.stopPropagation(); 
     const url = new URL(window.location.href);
-    url.searchParams.set('mode', 'assist');
-    url.searchParams.set('name', villain.name);
-    url.searchParams.set('type', villain.type);
-    url.searchParams.set('reason', villain.reason);
+    
+    // Use the Ritual ID if available
+    if (ritualId) {
+        url.search = `?ritual_id=${ritualId}`;
+    } else {
+        // Fallback for local
+        url.searchParams.set('mode', 'assist');
+        url.searchParams.set('name', villain.name);
+    }
     
     const shareData = {
       title: t.shareTitle,
@@ -218,15 +252,14 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
     }
   };
 
-  // Reset impact effect quickly
+  // Reset effects
   useEffect(() => {
     if (impactEffect) {
-      const timer = setTimeout(() => setImpactEffect(null), 100); // Faster reset for rapid fire
+      const timer = setTimeout(() => setImpactEffect(null), 100);
       return () => clearTimeout(timer);
     }
   }, [impactEffect]);
   
-  // Reset Combo text fade out
   useEffect(() => {
       if (showCombo) {
           const timer = setTimeout(() => setShowCombo(false), 2000);
@@ -244,6 +277,13 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
       {isAssistMode && (
         <div className="absolute top-[-40px] z-50 bg-red-600 text-white px-4 py-1 rounded-full text-sm font-bold animate-bounce shadow-lg border border-red-400">
            {t.assistWelcome}
+        </div>
+      )}
+      
+      {/* Friend Joined Notification */}
+      {friendJoined && (
+        <div className="absolute top-20 z-50 bg-amber-500 text-slate-900 px-4 py-2 rounded-lg font-bold animate-fade-in-up shadow-xl flex items-center gap-2">
+            <span>⚡</span> {lang === 'zh' ? '好友加入战场！' : 'Friend Joined the Fight!'}
         </div>
       )}
 
@@ -282,7 +322,7 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
         {/* Background Aura */}
         <div className={`absolute inset-0 bg-gradient-to-b from-transparent to-red-900/20 rounded-full blur-3xl transition-opacity duration-300 ${isFinished ? 'opacity-0' : 'opacity-100'}`} />
         
-        {/* COMBO COUNTER (New Social/Game Feature) */}
+        {/* COMBO COUNTER */}
         <div className={`absolute top-0 right-0 z-40 transform transition-all duration-200 pointer-events-none ${showCombo ? 'scale-110 opacity-100' : 'scale-50 opacity-0'}`}>
             <div className="text-4xl font-black text-yellow-400 italic drop-shadow-[4px_4px_0_rgba(185,28,28,1)] stroke-black" style={{ textShadow: '0 0 10px red' }}>
                 {combo} COMBO!
@@ -326,7 +366,7 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
                   {villain.name.substring(0, 12)}
                 </text>
                 
-                {/* Damage overlays based on hits (Progressive destruction) */}
+                {/* Damage overlays based on hits */}
                 {hits > 3 && <path d="M35 45 L 55 55" stroke="red" strokeWidth="2" opacity="0.6" />}
                 {hits > 7 && <path d="M75 35 L 45 55" stroke="red" strokeWidth="2" opacity="0.7" />}
                 {hits > 12 && <path d="M25 85 L 75 95" stroke="red" strokeWidth="3" opacity="0.8" />}
@@ -342,7 +382,7 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
            </div>
         </div>
 
-        {/* The Shoe & Impact (follows click) */}
+        {/* The Shoe & Impact */}
         {impactEffect && (
            <div 
              className="fixed pointer-events-none z-50"
@@ -352,21 +392,18 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
                transform: `translate(-50%, -50%) rotate(${shoeRotation}deg) scale(1.1)`,
              }}
            >
-              {/* Shoe SVG - More realistic slipper shape */}
+              {/* Shoe SVG */}
               <svg width="140" height="90" viewBox="0 0 100 60" className="drop-shadow-2xl filter drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">
-                {/* Sole */}
                 <path 
                   d="M5 30 Q 5 55 25 58 L 85 58 Q 98 58 98 40 Q 98 22 85 22 L 35 22 Q 5 22 5 30 Z" 
                   fill="#1e293b" 
                   stroke="#fbbf24" 
                   strokeWidth="2"
                 />
-                {/* Strap */}
                 <path d="M20 23 C 20 5, 50 5, 50 23" fill="none" stroke="#ef4444" strokeWidth="8" strokeLinecap="round" />
                 <path d="M20 23 C 20 5, 50 5, 50 23" fill="none" stroke="#fbbf24" strokeWidth="2" strokeLinecap="round" strokeDasharray="2,4" />
               </svg>
               
-              {/* Pow Effect Text - Dynamic words */}
               <div 
                 className="absolute top-0 left-0 -mt-20 -ml-16 text-6xl font-black text-amber-400 animate-bounce"
                 style={{ transform: `rotate(${impactEffect.textRotation}deg)` }}
@@ -396,7 +433,7 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
             </div>
         </div>
 
-        {/* SOS Button (Only show if NOT in assist mode and not finished) */}
+        {/* SOS Button */}
         {!isAssistMode && !isFinished && (
             <div className="relative">
                 <button 

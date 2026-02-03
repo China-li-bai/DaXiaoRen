@@ -12,7 +12,8 @@
     "@google/genai": "^1.38.0",
     "react-dom": "^19.2.4",
     "react": "^19.2.4",
-    "@supabase/supabase-js": "2"
+    "@supabase/supabase-js": "2",
+    "partykit": "^0.0.115"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",

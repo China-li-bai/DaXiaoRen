@@ -8,6 +8,7 @@ interface Props {
   villain: VillainData; // Added villain prop to show name on talisman
   onReset: () => void;
   isAssistMode?: boolean;
+  ritualId?: string | null;
 }
 
 const Conclusion: React.FC<Props> = ({ lang, resolution, villain, onReset, isAssistMode = false }) => {

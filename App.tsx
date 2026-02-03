@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { AppStep, Language, VillainData, ChantResponse, ResolutionResponse, VillainRecord, VillainType } from './types';
+import { AppStep, Language, VillainData, ChantResponse, ResolutionResponse, VillainRecord, VillainType, RitualSession } from './types';
 import { TRANSLATIONS, PAYMENT_CONFIG } from './constants';
 import { generateRitualChant, generateResolution } from './services/geminiService';
 import { getLocalRecords, saveLocalRecord, deleteLocalRecord } from './services/storageService';
+import { createRitualSession, getRitualSession } from './services/ritualService';
+import { isSupabaseConfigured } from './services/supabaseClient';
 import LanguageSwitch from './components/LanguageSwitch';
 import VillainForm from './components/VillainForm';
 import RitualStage from './components/RitualStage';
@@ -10,6 +12,7 @@ import Conclusion from './components/Conclusion';
 import PaymentModal from './components/PaymentModal';
 import HistoryDrawer from './components/HistoryDrawer';
 import GlobalStats from './components/GlobalStats';
+import LeaderboardWidget from './components/LeaderboardWidget';
 
 // Live Ticker Component
 const LiveTicker: React.FC<{ lang: Language }> = ({ lang }) => {
@@ -48,7 +51,14 @@ export default function App() {
   const [villain, setVillain] = useState<VillainData | null>(null);
   const [chant, setChant] = useState<ChantResponse | null>(null);
   const [resolution, setResolution] = useState<ResolutionResponse | null>(null);
+  
+  // Multiplayer State
   const [isAssistMode, setIsAssistMode] = useState(false);
+  const [ritualId, setRitualId] = useState<string | null>(null);
+  
+  // Leaderboard State
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [pendingLeaderboardClicks, setPendingLeaderboardClicks] = useState(0);
   
   // Credits System
   const [credits, setCredits] = useState<number>(PAYMENT_CONFIG.freeCredits);
@@ -60,7 +70,7 @@ export default function App() {
 
   const t = TRANSLATIONS[lang];
 
-  // Initialize: Load credits, history, and CHECK URL PARAMS for Assist Mode
+  // Initialize: Load credits, history, and CHECK URL PARAMS for Ritual Session
   useEffect(() => {
     const savedCredits = localStorage.getItem('vs_credits');
     if (savedCredits) {
@@ -68,23 +78,35 @@ export default function App() {
     }
     setRecords(getLocalRecords());
 
-    // Check for "Assist Mode" params
-    const params = new URLSearchParams(window.location.search);
-    const assistMode = params.get('mode') === 'assist';
-    const sharedName = params.get('name');
-    
-    if (assistMode && sharedName) {
-      console.log("Entering Assist Mode for:", sharedName);
-      const sharedType = (params.get('type') as VillainType) || VillainType.BOSS;
-      const sharedReason = params.get('reason') || '';
+    const initDeepLink = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const sharedRitualId = params.get('ritual_id');
+      const oldAssist = params.get('assist');
       
+      if (sharedRitualId) {
+        console.log("Found Ritual ID:", sharedRitualId);
+        const session = await getRitualSession(sharedRitualId);
+        if (session && session.status === 'ACTIVE') {
+           setupAssistMode(session);
+        } else {
+           window.history.replaceState({}, document.title, window.location.pathname);
+        }
+      } else if (oldAssist) {
+         // legacy
+      }
+    };
+    initDeepLink();
+  }, []);
+
+  const setupAssistMode = (session: RitualSession) => {
       setIsAssistMode(true);
+      setRitualId(session.id);
       setVillain({
-        name: sharedName,
-        type: sharedType,
-        reason: sharedReason
+        name: session.villain_name,
+        type: session.villain_type,
+        reason: session.reason
       });
-      // In assist mode, we skip the chant generation API call to be fast (or mock it)
+      // Mock chant for speed
       setChant({
         chantLines: lang === 'zh' 
           ? ["助阵好友打小人", "一打小人头，霉运不再留", "二打小人手，贵人身边走", "三打小人身，转运要翻身"]
@@ -93,11 +115,8 @@ export default function App() {
       });
       setHasAgreed(true);
       setStep(AppStep.RITUAL);
-      
-      // Clean URL so refresh doesn't stick in assist mode forever
       window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }, [lang]);
+  };
 
   const saveCredits = (amount: number) => {
     setCredits(amount);
@@ -106,7 +125,6 @@ export default function App() {
 
   const handleStart = () => {
     if (!hasAgreed) return;
-
     if (credits > 0) {
       setStep(AppStep.INPUT);
     } else {
@@ -130,15 +148,22 @@ export default function App() {
 
     setVillain(data);
     setStep(AppStep.PREPARING);
+
+    let newRitualId = null;
+    if (isSupabaseConfigured()) {
+        const session = await createRitualSession(data);
+        if (session) {
+            newRitualId = session.id;
+            setRitualId(session.id);
+        }
+    }
     
-    // Call Gemini
     const result = await generateRitualChant(data, lang);
     setChant(result);
     
-    // Save to History immediately
     const newRecord: VillainRecord = {
       ...data,
-      id: Date.now().toString(),
+      id: newRitualId || Date.now().toString(),
       timestamp: Date.now(),
       chant: result
     };
@@ -153,8 +178,6 @@ export default function App() {
       setShowPayment(true);
       return;
     }
-    
-    // Restore state from record
     setVillain({
       name: record.name,
       type: record.type,
@@ -162,19 +185,17 @@ export default function App() {
       imageUrl: record.imageUrl
     });
     
-    // If chant exists in record, use it, otherwise regenerate
     if (record.chant) {
       setChant(record.chant);
       setStep(AppStep.RITUAL);
     } else {
-      handleFormSubmit({
+       handleFormSubmit({
          name: record.name,
          type: record.type,
          reason: record.reason,
          imageUrl: record.imageUrl
       });
     }
-    
     setShowHistory(false);
     if (step === AppStep.INTRO) {
         setHasAgreed(true); 
@@ -186,16 +207,20 @@ export default function App() {
     setRecords(updated);
   };
 
+  // Called every time the user taps the screen in RitualStage
+  const handleRitualTap = () => {
+      // Add to local buffer for Leaderboard
+      setPendingLeaderboardClicks(prev => prev + 1);
+  };
+
   const handleRitualComplete = async () => {
     setStep(AppStep.RESOLVING);
     
     if (credits > 0 && !isAssistMode) {
-        // Only deduct credits for the owner, helpers play for free (viral hook)
         saveCredits(credits - 1);
     }
 
     if (villain) {
-      // For assist mode, we can use a simpler/mock resolution or call API
       const res = await generateResolution(villain, lang);
       setResolution(res);
       setStep(AppStep.CONCLUSION);
@@ -203,8 +228,8 @@ export default function App() {
   };
 
   const handleReset = () => {
-    // If they were in assist mode, now they become a regular user
     setIsAssistMode(false); 
+    setRitualId(null);
     setVillain(null);
     setChant(null);
     setResolution(null);
@@ -252,6 +277,14 @@ export default function App() {
           </svg>
         </button>
       )}
+
+      {/* Leaderboard Widget */}
+      <LeaderboardWidget 
+         clicksToAdd={pendingLeaderboardClicks} 
+         onClicksSent={() => setPendingLeaderboardClicks(0)}
+         isOpen={showLeaderboard}
+         onToggle={() => setShowLeaderboard(!showLeaderboard)}
+      />
 
       <main className="z-10 w-full flex flex-col items-center justify-center flex-grow">
         
@@ -329,8 +362,10 @@ export default function App() {
             lang={lang} 
             villain={villain} 
             chantData={chant} 
+            ritualId={ritualId}
             onComplete={handleRitualComplete}
-            isAssistMode={isAssistMode} 
+            isAssistMode={isAssistMode}
+            onTap={handleRitualTap} // Pass the tap handler to feed the leaderboard
           />
         )}
 
@@ -347,7 +382,8 @@ export default function App() {
             resolution={resolution} 
             villain={villain}
             onReset={handleReset}
-            isAssistMode={isAssistMode} 
+            isAssistMode={isAssistMode}
+            ritualId={ritualId} 
           />
         )}
       </main>
