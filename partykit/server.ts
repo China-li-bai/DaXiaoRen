@@ -1,5 +1,6 @@
 import type * as Party from "partykit/server";
 import { ClientMessage, RoomState, ServerMessage, GlobalLeaderboardState, GeoLocation } from "./types";
+import { getCountryName, getRegionName } from "./geo-mapping";
 
 const CORS_HEADERS = {
   "Access-Control-Allow-Origin": "*",
@@ -7,21 +8,13 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Headers": "Content-Type",
 };
 
-// Region Names Mapping (Optional: You might want a library for this in production)
-// Cloudflare returns ISO-3166-2 region codes usually.
-const getCountryName = (code: string) => {
-    const names: Record<string, string> = {
-        'CN': 'China', 'US': 'USA', 'TW': 'Taiwan', 'HK': 'Hong Kong',
-        'JP': 'Japan', 'KR': 'Korea', 'GB': 'UK', 'CA': 'Canada',
-        'SG': 'Singapore', 'MY': 'Malaysia', 'AU': 'Australia'
-    };
-    return names[code] || code;
-};
-
 export default class VillainSmashServer implements Party.Server {
   options: Party.ServerOptions = {
     hibernate: true,
   };
+
+  broadcastTimer: ReturnType<typeof setTimeout> | null = null;
+  pendingBroadcast: { type: 'LB_UPDATE'; state: GlobalLeaderboardState } | null = null;
 
   constructor(readonly party: Party.Room) {}
 
@@ -130,11 +123,18 @@ export default class VillainSmashServer implements Party.Server {
                 // Persist
                 await this.party.storage.put("lb_state", lbState);
 
-                // Broadcast Update
-                // Optimization: In high traffic, don't broadcast on EVERY click. 
-                // Use a throttled broadcast or alarm (PartyKit Alarms). 
-                // For now, we broadcast to everyone (PopCat style needs real-time).
-                this.party.broadcast(JSON.stringify({ type: 'LB_UPDATE', state: lbState }));
+                // Throttled Broadcast Update (1 second delay to reduce bandwidth)
+                this.pendingBroadcast = { type: 'LB_UPDATE', state: lbState };
+                
+                if (!this.broadcastTimer) {
+                    this.broadcastTimer = setTimeout(() => {
+                        if (this.pendingBroadcast) {
+                            this.party.broadcast(JSON.stringify(this.pendingBroadcast));
+                            this.pendingBroadcast = null;
+                        }
+                        this.broadcastTimer = null;
+                    }, 1000);
+                }
             }
         }
         return;

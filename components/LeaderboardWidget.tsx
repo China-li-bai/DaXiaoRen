@@ -14,6 +14,7 @@ interface Props {
 
 const LeaderboardWidget: React.FC<Props> = ({ clicksToAdd, onClicksSent, isOpen, onToggle }) => {
   const [leaderboard, setLeaderboard] = useState<GlobalLeaderboardState>({});
+  const [prevLeaderboard, setPrevLeaderboard] = useState<GlobalLeaderboardState>({});
 
   // Buffer sending clicks to avoid flooding websocket
   const clickBuffer = useRef(0);
@@ -24,6 +25,7 @@ const LeaderboardWidget: React.FC<Props> = ({ clicksToAdd, onClicksSent, isOpen,
     onMessage(event) {
       const msg = JSON.parse(event.data);
       if (msg.type === 'LB_UPDATE') {
+        setPrevLeaderboard(leaderboard);
         setLeaderboard(msg.state);
       }
     }
@@ -53,14 +55,34 @@ const LeaderboardWidget: React.FC<Props> = ({ clicksToAdd, onClicksSent, isOpen,
     .map(([code, data]) => ({ code, ...data }))
     .sort((a, b) => b.score - a.score);
 
+  const getFlagEmoji = (countryCode: string): string => {
+    const codePoints = countryCode
+      .toUpperCase()
+      .split('')
+      .map(char => 127397 + char.charCodeAt(0));
+    return String.fromCodePoint(...codePoints);
+  };
+
+  const getScoreChange = (countryCode: string): number => {
+    const current = leaderboard[countryCode]?.score || 0;
+    const previous = prevLeaderboard[countryCode]?.score || 0;
+    return current - previous;
+  };
+
+  const getRegionScoreChange = (countryCode: string, regionCode: string): number => {
+    const current = leaderboard[countryCode]?.regions[regionCode] || 0;
+    const previous = prevLeaderboard[countryCode]?.regions[regionCode] || 0;
+    return current - previous;
+  };
+
   return (
     <>
       {/* Floating Toggle Button */}
       <button 
         onClick={onToggle}
-        className="fixed bottom-4 left-4 z-40 bg-slate-900 border border-amber-600 text-amber-500 p-3 rounded-full shadow-lg hover:bg-slate-800 transition-transform active:scale-95 flex items-center gap-2"
+        className="fixed bottom-4 left-4 z-40 bg-slate-900 border border-amber-600 text-amber-500 p-3 rounded-full shadow-lg hover:bg-slate-800 hover:scale-110 transition-all active:scale-95 flex items-center gap-2 group"
       >
-        <span>🏆</span>
+        <span className="group-hover:animate-bounce">🏆</span>
         <span className="font-bold text-xs uppercase hidden md:inline">Leaderboard</span>
       </button>
 
@@ -76,18 +98,24 @@ const LeaderboardWidget: React.FC<Props> = ({ clicksToAdd, onClicksSent, isOpen,
                 <div className="text-center text-slate-500 mt-10 text-xs">Waiting for data...</div>
             ) : (
                 <div className="space-y-2">
-                    {sortedCountries.map((c, index) => (
-                        <div key={c.code} className="bg-slate-800/50 rounded p-3 border border-slate-700/50">
+                    {sortedCountries.map((c, index) => {
+                        const scoreChange = getScoreChange(c.code);
+                        return (
+                        <div key={c.code} className="bg-slate-800/50 rounded p-3 border border-slate-700/50 hover:border-amber-600/50 transition-colors">
                             <div className="flex justify-between items-center mb-2">
                                 <div className="flex items-center gap-3">
                                     <span className={`font-mono font-bold text-sm w-6 text-center ${index < 3 ? 'text-yellow-400' : 'text-slate-500'}`}>
                                         #{index + 1}
                                     </span>
+                                    <span className="text-2xl">{getFlagEmoji(c.code)}</span>
                                     <span className="font-bold text-slate-200">{c.name}</span>
-                                    {/* Flag emoji logic could go here based on code */}
-                                    <span className="text-xs text-slate-500 bg-slate-800 px-1 rounded">{c.code}</span>
                                 </div>
-                                <span className="text-amber-500 font-mono font-bold">{c.score.toLocaleString()}</span>
+                                <div className="flex items-center gap-2">
+                                    {scoreChange > 0 && (
+                                        <span className="text-green-400 text-xs font-mono animate-pulse">+{scoreChange.toLocaleString()}</span>
+                                    )}
+                                    <span className="text-amber-500 font-mono font-bold">{c.score.toLocaleString()}</span>
+                                </div>
                             </div>
                             
                             {/* Top 3 Regions preview */}
@@ -95,16 +123,24 @@ const LeaderboardWidget: React.FC<Props> = ({ clicksToAdd, onClicksSent, isOpen,
                                 {Object.entries(c.regions)
                                     .sort(([,a], [,b]) => b - a)
                                     .slice(0, 3)
-                                    .map(([regionCode, score]) => (
-                                        <div key={regionCode} className="flex justify-between">
-                                            <span>{regionCode}</span>
-                                            <span>{score.toLocaleString()}</span>
-                                        </div>
-                                    ))
-                                }
+                                    .map(([regionCode, score]) => {
+                                        const regionChange = getRegionScoreChange(c.code, regionCode);
+                                        return (
+                                            <div key={regionCode} className="flex justify-between items-center">
+                                                <span>{regionCode}</span>
+                                                <div className="flex items-center gap-2">
+                                                    {regionChange > 0 && (
+                                                        <span className="text-green-400/70 text-[9px]">+{regionChange}</span>
+                                                    )}
+                                                    <span className="text-slate-300">{score.toLocaleString()}</span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
                             </div>
                         </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
         </div>
