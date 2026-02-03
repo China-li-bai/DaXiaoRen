@@ -95,15 +95,9 @@ const Conclusion: React.FC<Props> = ({ lang, resolution, villain, onReset, isAss
         </div>
       </div>
 
-      <div className="mt-6 max-w-sm mx-auto">
-        <p className="text-xs text-slate-400 text-center leading-relaxed px-4">
-          {t.mentalHealthNote || "💚 Remember: This is just for fun. If you're feeling overwhelmed, talking to a real person or professional can help."}
-        </p>
-      </div>
-
       <button
         onClick={onReset}
-        className={`mt-6 px-10 py-3 font-bold rounded-full transition-all shadow-lg text-sm uppercase tracking-wider ${
+        className={`mt-8 px-10 py-3 font-bold rounded-full transition-all shadow-lg text-sm uppercase tracking-wider ${
             isAssistMode 
                 ? 'bg-amber-600 hover:bg-amber-500 text-white animate-bounce' 
                 : 'bg-slate-800 border border-slate-600 text-slate-300 hover:bg-slate-700 hover:text-white'

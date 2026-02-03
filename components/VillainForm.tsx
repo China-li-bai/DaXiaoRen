@@ -2,8 +2,6 @@ import React, { useState } from 'react';
 import { VillainData, VillainType, Language } from '../types';
 import { TRANSLATIONS } from '../constants';
 import { identifyVillain } from '../services/geminiService';
-import { checkContentCompliance, sanitizeInput } from '../services/contentModeration';
-
 
 interface Props {
   lang: Language;
@@ -12,36 +10,39 @@ interface Props {
 
 const VillainForm: React.FC<Props> = ({ lang, onSubmit }) => {
   const t = TRANSLATIONS[lang];
-  const [mode, setMode] = useState<'MANUAL' | 'SEARCH'>('SEARCH');
+  const [mode, setMode] = useState<'MANUAL' | 'SEARCH'>('SEARCH'); // Default to Search for better UX
   
+  // Search State
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
 
+  // Form State
   const [name, setName] = useState('');
   const [type, setType] = useState<VillainType>(VillainType.BOSS);
   const [reason, setReason] = useState('');
   const [imageUrl, setImageUrl] = useState<string | undefined>(undefined);
   
-  const [complianceResult, setComplianceResult] = useState<ReturnType<typeof checkContentCompliance> | null>(null);
+  // Compliance Warning
+  const [showWarning, setShowWarning] = useState(false);
 
-  const handleCheck = (input: string) => {
-    const result = checkContentCompliance(input, lang);
-    setComplianceResult(result);
-    return result;
+  const checkCompliance = (input: string) => {
+      const sensitiveKeywords = ['president', 'minister', 'government', 'ccp', 'party', '习', '李', '政府', '党', '国家'];
+      const hasSensitive = sensitiveKeywords.some(k => input.toLowerCase().includes(k));
+      setShowWarning(hasSensitive);
+      return hasSensitive;
   };
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchQuery.trim()) return;
     
-    const sanitizedQuery = sanitizeInput(searchQuery);
-    const check = handleCheck(sanitizedQuery);
-    if (!check.passed && check.severity === 'error') return;
+    if (checkCompliance(searchQuery)) return; // Stop if sensitive
 
     setIsSearching(true);
-    const result = await identifyVillain(sanitizedQuery, lang);
+    const result = await identifyVillain(searchQuery, lang);
     setIsSearching(false);
 
+    // Auto-fill form and switch to manual to let user review
     setName(result.name);
     setReason(result.reason);
     setMode('MANUAL');
@@ -61,12 +62,9 @@ const VillainForm: React.FC<Props> = ({ lang, onSubmit }) => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) return;
+    if (checkCompliance(name)) return; // Stop if sensitive
     
-    const sanitizedName = sanitizeInput(name);
-    const check = handleCheck(sanitizedName);
-    if (!check.passed && check.severity === 'error') return;
-    
-    onSubmit({ name: sanitizedName, type, reason, imageUrl });
+    onSubmit({ name, type, reason, imageUrl });
   };
 
   return (
@@ -90,12 +88,14 @@ const VillainForm: React.FC<Props> = ({ lang, onSubmit }) => {
         </button>
       </div>
 
-      {/* Content Warning Banner */}
-      <div className="mb-4 bg-amber-900/30 border border-amber-600/50 p-3 rounded text-xs text-amber-200">
-          {lang === 'en' 
-            ? "⚠️ IMPORTANT: Enter fictional names only! This is a game - do NOT enter real people's names. Violations may result in account termination." 
-            : "⚠️ 重要提示：请勿输入真实人名！这只是虚拟游戏，禁止输入任何真实姓名。违规将可能导致账号被封禁。"}
-      </div>
+      {/* Compliance Warning Banner */}
+      {showWarning && (
+          <div className="mb-4 bg-red-900/50 border border-red-500 text-red-200 p-3 rounded text-xs">
+              {lang === 'en' 
+                ? "⚠️ Safety Check: Please focus on personal grievances (Bad Boss, Ex, Habits). Avoid political or public figures to keep this temple open." 
+                : "⚠️ 善意提醒：请勿输入政治人物或敏感词汇。打小人仅限私人恩怨（如老板、前任），请共同维护神庙安宁。"}
+          </div>
+      )}
 
       {mode === 'SEARCH' ? (
          <form onSubmit={handleSearch} className="space-y-4">
@@ -108,18 +108,11 @@ const VillainForm: React.FC<Props> = ({ lang, onSubmit }) => {
                value={searchQuery}
                onChange={(e) => {
                    setSearchQuery(e.target.value);
-                   handleCheck(e.target.value);
+                   if(showWarning) setShowWarning(false);
                }}
                placeholder={lang === 'en' ? "e.g., My Micromanaging Boss" : "例如：我的老板"}
-               className={`w-full bg-slate-900 border rounded-lg p-3 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none ${
-                 complianceResult?.severity === 'error' 
-                   ? 'border-red-500 focus:ring-red-500' 
-                   : 'border-slate-700'
-               }`}
+               className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
              />
-             {complianceResult && complianceResult.severity === 'warning' && (
-               <p className="text-amber-400 text-xs mt-1">⚠️ {complianceResult.reason}</p>
-             )}
              <p className="text-xs text-slate-500 mt-2">
                {lang === 'en' 
                  ? "AI will search Google to find the name and role." 
@@ -128,7 +121,7 @@ const VillainForm: React.FC<Props> = ({ lang, onSubmit }) => {
            </div>
            <button
              type="submit"
-             disabled={isSearching || (complianceResult?.severity === 'error')}
+             disabled={isSearching}
              className="w-full bg-amber-600 hover:bg-amber-500 text-slate-900 font-bold py-3 rounded-lg shadow-lg transform transition active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
            >
              {isSearching ? (
@@ -153,19 +146,12 @@ const VillainForm: React.FC<Props> = ({ lang, onSubmit }) => {
               value={name}
               onChange={(e) => {
                   setName(e.target.value);
-                  handleCheck(e.target.value);
+                  if(showWarning) setShowWarning(false);
               }}
               placeholder={t.placeholderName}
-              className={`w-full bg-slate-900 border rounded-lg p-3 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none ${
-                complianceResult?.severity === 'error' 
-                  ? 'border-red-500 focus:ring-red-500' 
-                  : 'border-slate-700'
-              }`}
+              className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:ring-2 focus:ring-amber-500 focus:outline-none"
               required
             />
-            {complianceResult && complianceResult.severity === 'warning' && (
-              <p className="text-amber-400 text-xs mt-1">⚠️ {complianceResult.reason}</p>
-            )}
           </div>
 
           <div>

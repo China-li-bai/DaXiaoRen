@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { supabase, isSupabaseConfigured } from '../services/supabaseClient';
 import { Language } from '../types';
 
 interface Props {
