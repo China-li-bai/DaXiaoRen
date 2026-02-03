@@ -1,0 +1,6 @@
+{
+  "name": "villain-smash-party",
+  "main": "server.ts",
+  "compatibilityDate": "2025-01-01",
+  "minify": true
+}

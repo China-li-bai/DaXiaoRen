@@ -5,6 +5,7 @@ import { generateRitualChant, generateResolution } from './services/workerServic
 import { getLocalRecords, saveLocalRecord, deleteLocalRecord } from './services/storageService';
 import LanguageSwitch from './components/LanguageSwitch';
 import GlobalStats from './components/GlobalStats';
+import LeaderboardWidget from './components/LeaderboardWidget';
 
 const VillainForm = lazy(() => import('./components/VillainForm'));
 const RitualStage = lazy(() => import('./components/RitualStage'));
@@ -64,7 +65,9 @@ export default function App() {
   // Share System
   const [showShare, setShowShare] = useState(false);
   const [pendingVillain, setPendingVillain] = useState<VillainData | null>(null);
-
+  // Leaderboard State
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [pendingLeaderboardClicks, setPendingLeaderboardClicks] = useState(0);
   const t = TRANSLATIONS[lang];
 
   // Initialize: Load credits, history, and CHECK URL PARAMS for Assist Mode
@@ -263,7 +266,13 @@ export default function App() {
           </svg>
         </button>
       )}
-
+      {/* Leaderboard Widget */}
+      <LeaderboardWidget 
+         clicksToAdd={pendingLeaderboardClicks} 
+         onClicksSent={() => setPendingLeaderboardClicks(0)}
+         isOpen={showLeaderboard}
+         onToggle={() => setShowLeaderboard(!showLeaderboard)}
+      />
       <main className="z-10 w-full flex flex-col items-center justify-center flex-grow">
         
         {step === AppStep.INTRO && (
