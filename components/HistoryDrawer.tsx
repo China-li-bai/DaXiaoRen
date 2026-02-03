@@ -1,5 +1,5 @@
 import React from 'react';
-import { VillainRecord, Language, VillainType } from '../types';
+import { VillainRecord, Language } from '../types';
 import { TRANSLATIONS } from '../constants';
 
 interface Props {

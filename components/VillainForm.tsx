@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { VillainData, VillainType, Language } from '../types';
 import { TRANSLATIONS } from '../constants';
-import { identifyVillain } from '../services/geminiService';
+import { identifyVillain } from '../services/workerService';
+
 
 interface Props {
   lang: Language;

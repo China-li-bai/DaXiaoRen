@@ -65,7 +65,7 @@ export const generateRitualChant = async (
   }
 };
 
-export const generateResolution = debounce(async (
+export const generateResolution = async (
   villain: VillainData,
   lang: Language
 ): Promise<ResolutionResponse> => {
@@ -79,4 +79,4 @@ export const generateResolution = debounce(async (
       advice: lang === 'en' ? "Focus on your own path." : "莫与小人论长短，专注自身修福报。"
     };
   }
-}, 1000);
+};
