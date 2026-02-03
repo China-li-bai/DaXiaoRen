@@ -28,6 +28,8 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
   const [impactEffect, setImpactEffect] = useState<{x: number, y: number, id: number, textRotation: number} | null>(null);
   const [particles, setParticles] = useState<Particle[]>([]);
   const [showShareTooltip, setShowShareTooltip] = useState(false);
+  const [isComplete, setIsComplete] = useState(false);
+
   // Combo System
   const [combo, setCombo] = useState(0);
   const [showCombo, setShowCombo] = useState(false);
@@ -185,7 +187,8 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
     const newHits = hits + 1;
     setHits(newHits);
 
-    if (newHits >= TOTAL_HITS_REQUIRED) {
+    if (newHits >= TOTAL_HITS_REQUIRED && !isComplete) {
+      setIsComplete(true);
       setTimeout(onComplete, 800);
     }
   };
@@ -234,7 +237,7 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
   }, [showCombo, combo]);
 
   const progress = (hits / TOTAL_HITS_REQUIRED) * 100;
-  const isFinished = hits >= TOTAL_HITS_REQUIRED;
+  const isFinished = isComplete || hits >= TOTAL_HITS_REQUIRED;
 
   return (
     <div className="flex flex-col items-center justify-between h-full w-full max-w-2xl mx-auto relative select-none">
