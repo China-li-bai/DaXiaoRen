@@ -1,12 +1,20 @@
-import { createClient } from '@supabase/supabase-js';
+let supabase: any = null;
+let isSupabaseConfiguredValue = false;
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+try {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
+  
+  if (supabaseUrl && supabaseAnonKey) {
+    const { createClient } = await import('@supabase/supabase-js');
+    supabase = createClient(supabaseUrl, supabaseAnonKey);
+    isSupabaseConfiguredValue = true;
+  }
+} catch (e) {
+  console.warn('Supabase not configured or import failed:', e);
+}
 
-export const supabase = supabaseUrl && supabaseAnonKey
-  ? createClient(supabaseUrl, supabaseAnonKey)
-  : null;
-
+export { supabase };
 export const isSupabaseConfigured = (): boolean => {
-  return supabase !== null;
+  return isSupabaseConfiguredValue;
 };
