@@ -1,0 +1,8 @@
+name = "villain-smash-party"
+main = "server.ts"
+compatibility_date = "2025-01-01"
+
+[vars]
+# API Key 将在 Cloudflare Dashboard 中设置
+# 或者通过环境变量设置
+# API_KEY = "your-gemini-api-key"

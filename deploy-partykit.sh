@@ -49,21 +49,6 @@ if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
     exit 1
 fi
 
-# 检查是否安装了 PartyKit CLI
-if ! command -v partykit &> /dev/null; then
-    echo -e "${YELLOW}📦 安装 PartyKit CLI...${NC}"
-    npm install -g partykit
-    
-    if [ $? -ne 0 ]; then
-        echo -e "${RED}❌ PartyKit CLI 安装失败！${NC}"
-        exit 1
-    fi
-    
-    echo -e "${GREEN}✅ PartyKit CLI 安装成功${NC}"
-else
-    echo -e "${GREEN}✅ PartyKit CLI 已安装${NC}"
-fi
-
 # 进入 partykit 目录
 echo -e "${YELLOW}📁 进入 PartyKit 目录...${NC}"
 cd partykit
@@ -76,15 +61,41 @@ fi
 
 echo -e "${GREEN}✅ 找到配置文件: partykit.json${NC}"
 
+# 检查是否安装了 Wrangler
+if ! command -v wrangler &> /dev/null; then
+    echo -e "${YELLOW}📦 安装 Wrangler...${NC}"
+    npm install -g wrangler
+    
+    if [ $? -ne 0 ]; then
+        echo -e "${RED}❌ Wrangler 安装失败！${NC}"
+        exit 1
+    fi
+    
+    echo -e "${GREEN}✅ Wrangler 安装成功${NC}"
+else
+    echo -e "${GREEN}✅ Wrangler 已安装${NC}"
+fi
+
+# 登录 Cloudflare
+echo -e "${YELLOW}🔐 登录 Cloudflare...${NC}"
+echo "$CLOUDFLARE_API_TOKEN" | wrangler login --api-token
+
+if [ $? -ne 0 ]; then
+    echo -e "${RED}❌ Wrangler 登录失败！${NC}"
+    exit 1
+fi
+
+echo -e "${GREEN}✅ 登录成功${NC}"
+
 # 部署到 Cloudflare
 echo -e "${YELLOW}📤 正在部署到 Cloudflare...${NC}"
 echo ""
 echo "📋 部署信息:"
 echo "   Account ID: ${CLOUDFLARE_ACCOUNT_ID:0:8}..."
-echo "   配置文件: partykit.json"
+echo "   配置文件: wrangler.toml"
 echo ""
 
-# 执行部署
+# 使用 PartyKit CLI 部署
 npx partykit deploy --prod
 
 if [ $? -ne 0 ]; then
