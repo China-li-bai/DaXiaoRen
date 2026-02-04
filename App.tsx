@@ -235,29 +235,29 @@ export default function App() {
   );
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 relative font-serif text-slate-100 overflow-hidden">
+    <div className="min-h-screen flex flex-col items-center justify-center p-3 sm:p-4 relative font-serif text-slate-100 overflow-hidden">
       {renderBackground()}
-      
+
       <LiveTicker lang={lang} />
-      
+
       <LanguageSwitch lang={lang} setLang={setLang} />
 
-      {/* Credit Counter */}
-      <div className="absolute top-4 left-4 z-40 bg-slate-900/80 backdrop-blur border border-slate-700 px-3 py-1 rounded-full text-sm font-mono flex items-center gap-2 text-amber-500 cursor-pointer hover:bg-slate-800 transition-colors"
+      {/* Credit Counter - Mobile Optimized */}
+      <div className="absolute top-3 sm:top-4 left-3 sm:left-4 z-40 bg-slate-900/80 backdrop-blur border border-slate-700 px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-mono flex items-center gap-1.5 sm:gap-2 text-amber-500 cursor-pointer hover:bg-slate-800 transition-colors"
            onClick={() => setShowPayment(true)}>
          <span>🪙</span>
          <span>{credits}</span>
-         <span className="text-slate-500 text-xs ml-1 hover:text-white">+</span>
+         <span className="text-slate-500 text-xs ml-0.5 hover:text-white hidden sm:inline">+</span>
       </div>
 
-      {/* History Button */}
+      {/* History Button - Mobile Optimized */}
       {(step === AppStep.INTRO || step === AppStep.INPUT) && !isAssistMode && (
-        <button 
+        <button
           onClick={() => setShowHistory(true)}
-          className="absolute top-16 left-4 z-40 bg-slate-900/80 backdrop-blur border border-slate-700 p-2 rounded-full text-slate-400 hover:text-amber-500 hover:border-amber-500 transition-colors shadow-lg"
+          className="absolute top-14 sm:top-16 left-3 sm:left-4 z-40 bg-slate-900/80 backdrop-blur border border-slate-700 p-1.5 sm:p-2 rounded-full text-slate-400 hover:text-amber-500 hover:border-amber-500 transition-colors shadow-lg"
           title={t.openHistory}
         >
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <svg className="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
             <polyline points="14 2 14 8 20 8"></polyline>
             <line x1="16" y1="13" x2="8" y2="13"></line>
@@ -277,48 +277,48 @@ export default function App() {
         
         {step === AppStep.INTRO && (
           <div className="text-center animate-fade-in space-y-8 max-w-2xl px-4">
-            <h1 className="text-5xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-amber-500 drop-shadow-sm mb-2">
+            <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-amber-500 drop-shadow-sm mb-2">
               {t.title}
             </h1>
-            <p className="text-xl md:text-2xl text-slate-400 tracking-widest uppercase">
+            <p className="text-lg sm:text-xl md:text-2xl text-slate-400 tracking-widest uppercase">
               {t.subtitle}
             </p>
-            
+
             <GlobalStats lang={lang} />
-            
-            <div className="mt-8">
-               <div className="flex justify-center gap-4 mb-8 opacity-70">
-                 <span className="text-4xl">👞</span>
-                 <span className="text-4xl">⚡</span>
-                 <span className="text-4xl">🐯</span>
+
+            <div className="mt-6 sm:mt-8">
+               <div className="flex justify-center gap-3 sm:gap-4 mb-6 sm:mb-8 opacity-70">
+                 <span className="text-3xl sm:text-4xl">👞</span>
+                 <span className="text-3xl sm:text-4xl">⚡</span>
+                 <span className="text-3xl sm:text-4xl">🐯</span>
                </div>
 
-               <div className="bg-slate-900/80 p-5 rounded-lg border border-amber-600/40 backdrop-blur-sm text-left mb-8 shadow-xl max-w-lg mx-auto">
+               <div className="bg-slate-900/80 p-4 sm:p-5 rounded-lg border border-amber-600/40 backdrop-blur-sm text-left mb-6 sm:mb-8 shadow-xl max-w-lg mx-auto">
                   <div className="flex items-center gap-2 mb-3 text-amber-400">
                     <span className="text-lg">⚠️</span>
                     <span className="font-bold text-sm uppercase tracking-wider">{t.disclaimerTitle || 'Disclaimer'}</span>
                   </div>
-                  <div className="bg-slate-800/50 p-3 rounded text-xs text-slate-300 leading-relaxed font-sans max-h-48 overflow-y-auto">
+                  <div className="bg-slate-800/50 p-2.5 sm:p-3 rounded text-[11px] sm:text-xs text-slate-300 leading-relaxed font-sans max-h-40 sm:max-h-48 overflow-y-auto">
                     {t.disclaimer.split('\n').map((line, i) => (
-                      <p key={i} className={line.startsWith('1') || line.startsWith('2') || line.startsWith('3') || line.startsWith('4') || line.startsWith('5') ? 'mt-2 first:mt-0' : ''}>
+                      <p key={i} className={line.startsWith('1') || line.startsWith('2') || line.startsWith('3') || line.startsWith('4') || line.startsWith('5') ? 'mt-1.5 sm:mt-2 first:mt-0' : ''}>
                         {line}
                       </p>
                     ))}
                   </div>
-                  <label className="flex items-center gap-3 cursor-pointer group mt-4">
-                    <div className="relative flex items-center">
-                      <input 
-                        type="checkbox" 
+                  <label className="flex items-center gap-2.5 sm:gap-3 cursor-pointer group mt-3 sm:mt-4">
+                    <div className="relative flex items-center shrink-0">
+                      <input
+                        type="checkbox"
                         checked={hasAgreed}
                         onChange={(e) => setHasAgreed(e.target.checked)}
-                        className="peer sr-only" 
+                        className="peer sr-only"
                       />
-                      <div className="w-5 h-5 border-2 border-amber-500 rounded bg-slate-800 peer-checked:bg-amber-500 peer-checked:border-amber-500 transition-all"></div>
-                      <svg className="absolute top-0.5 left-0.5 w-4 h-4 text-slate-900 opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                      <div className="w-4 h-4 sm:w-5 sm:h-5 border-2 border-amber-500 rounded bg-slate-800 peer-checked:bg-amber-500 peer-checked:border-amber-500 transition-all"></div>
+                      <svg className="absolute top-0 left-0 w-4 h-4 sm:w-5 sm:h-5 text-slate-900 opacity-0 peer-checked:opacity-100 pointer-events-none transition-opacity p-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                         <polyline points="20 6 9 17 4 12"></polyline>
                       </svg>
                     </div>
-                    <span className={`text-sm font-medium transition-colors select-none ${hasAgreed ? 'text-amber-400' : 'text-slate-300 group-hover:text-white'}`}>
+                    <span className={`text-xs sm:text-sm font-medium transition-colors select-none ${hasAgreed ? 'text-amber-400' : 'text-slate-300 group-hover:text-white'}`}>
                       {t.agreeLabel}
                     </span>
                   </label>
@@ -327,9 +327,9 @@ export default function App() {
               <button
                 onClick={handleStart}
                 disabled={!hasAgreed}
-                className={`group relative px-8 py-4 bg-slate-800 border-2 border-red-600 text-red-500 font-bold text-xl uppercase tracking-widest rounded transition-all duration-300 ${
-                  hasAgreed 
-                    ? 'hover:bg-red-900/30 hover:text-red-400 cursor-pointer shadow-[0_0_20px_rgba(220,38,38,0.3)]' 
+                className={`group relative px-6 sm:px-8 py-3 sm:py-4 bg-slate-800 border-2 border-red-600 text-red-500 font-bold text-lg sm:text-xl uppercase tracking-widest rounded transition-all duration-300 ${
+                  hasAgreed
+                    ? 'hover:bg-red-900/30 hover:text-red-400 cursor-pointer shadow-[0_0_20px_rgba(220,38,38,0.3)]'
                     : 'opacity-50 grayscale cursor-not-allowed'
                 }`}
               >
@@ -345,10 +345,10 @@ export default function App() {
         )}
 
         {step === AppStep.PREPARING && (
-          <div className="text-center animate-pulse">
-            <div className="w-16 h-16 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-6" />
-            <h2 className="text-2xl font-bold text-amber-500">{t.generating}</h2>
-            <p className="text-slate-400 mt-2 text-sm">{lang === 'en' ? "Consulting the digital spirits..." : "正在连接赛博神婆..."}</p>
+          <div className="text-center animate-pulse px-4">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-4 sm:mb-6" />
+            <h2 className="text-xl sm:text-2xl font-bold text-amber-500">{t.generating}</h2>
+            <p className="text-slate-400 mt-2 text-xs sm:text-sm">{lang === 'en' ? "Consulting the digital spirits..." : "正在连接赛博神婆..."}</p>
           </div>
         )}
 
@@ -363,9 +363,9 @@ export default function App() {
         )}
 
         {step === AppStep.RESOLVING && (
-          <div className="text-center animate-pulse">
-            <div className="w-16 h-16 border-4 border-blue-400 border-t-transparent rounded-full animate-spin mx-auto mb-6" />
-            <h2 className="text-2xl font-bold text-blue-400">{t.resolving}</h2>
+          <div className="text-center animate-pulse px-4">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 border-4 border-blue-400 border-t-transparent rounded-full animate-spin mx-auto mb-4 sm:mb-6" />
+            <h2 className="text-xl sm:text-2xl font-bold text-blue-400">{t.resolving}</h2>
           </div>
         )}
 
@@ -414,10 +414,10 @@ export default function App() {
         />
       )}
 
-      <footer className="z-10 mt-8 text-slate-600 text-xs text-center pb-4">
-        © {new Date().getFullYear()} VillainSmash. 
-        <br/>
-        {lang === 'en' ? 'Digital Ritual.' : '赛博仪式 · 心诚则灵'}
+      <footer className="z-10 mt-6 sm:mt-8 text-slate-600 text-[10px] sm:text-xs text-center pb-4 px-4">
+        © {new Date().getFullYear()} VillainSmash.
+        <br className="sm:hidden"/>
+        <span className="sm:ml-1">{lang === 'en' ? 'Digital Ritual.' : '赛博仪式 · 心诚则灵'}</span>
       </footer>
     </div>
   );
