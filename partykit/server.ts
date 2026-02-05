@@ -1,5 +1,5 @@
 import type * as Party from "partykit/server";
-import { ClientMessage, RoomState, ServerMessage, GlobalLeaderboardState, GeoLocation } from "./types";
+import { ClientMessage, RoomState, ServerMessage, GlobalLeaderboardState, CountryData, LeaderboardMetadata, GeoLocation } from "./types";
 import { getCountryName, getRegionName } from "./geo-mapping";
 
 const CORS_HEADERS = {
@@ -8,6 +8,9 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Headers": "Content-Type",
 };
 
+const LEADERBOARD_VERSION = "v1.0";
+const DATA_RESET_INTERVAL = 7 * 24 * 60 * 60 * 1000; // 7 days in milliseconds
+
 export default class VillainSmashServer implements Party.Server {
   options: Party.ServerOptions = {
     hibernate: true,
@@ -15,8 +18,65 @@ export default class VillainSmashServer implements Party.Server {
 
   broadcastTimer: ReturnType<typeof setTimeout> | null = null;
   pendingBroadcast: { type: 'LB_UPDATE'; state: GlobalLeaderboardState } | null = null;
+  leaderboardMetadata: LeaderboardMetadata | null = null;
 
   constructor(readonly party: Party.Room) {}
+
+  async initializeLeaderboardMetadata() {
+    let metadata = await this.party.storage.get<LeaderboardMetadata>("lb_metadata");
+    
+    if (!metadata) {
+      metadata = {
+        version: LEADERBOARD_VERSION,
+        lastReset: Date.now(),
+        totalGlobalClicks: 0,
+        createdAt: Date.now()
+      };
+      await this.party.storage.put("lb_metadata", metadata);
+    }
+    
+    this.leaderboardMetadata = metadata;
+    
+    return metadata;
+  }
+
+  async updateLeaderboardMetadata(updates: Partial<LeaderboardMetadata>) {
+    if (!this.leaderboardMetadata) {
+      await this.initializeLeaderboardMetadata();
+    }
+    
+    this.leaderboardMetadata = {
+      ...this.leaderboardMetadata,
+      ...updates
+    };
+    
+    await this.party.storage.put("lb_metadata", this.leaderboardMetadata);
+  }
+
+  async resetLeaderboardIfNeeded() {
+    const metadata = await this.initializeLeaderboardMetadata();
+    const now = Date.now();
+    
+    if (now - metadata.lastReset > DATA_RESET_INTERVAL) {
+      console.log("Resetting leaderboard data...");
+      
+      const lbState = await this.party.storage.get<GlobalLeaderboardState>("lb_state") || {};
+      
+      for (const countryCode in lbState) {
+        lbState[countryCode].score = 0;
+        lbState[countryCode].totalClicks = 0;
+        for (const regionCode in lbState[countryCode].regions) {
+          lbState[countryCode].regions[regionCode] = 0;
+        }
+      }
+      
+      await this.party.storage.put("lb_state", lbState);
+      await this.updateLeaderboardMetadata({
+        lastReset: now,
+        totalGlobalClicks: 0
+      });
+    }
+  }
 
   broadcast(msg: ServerMessage, excludeIds: string[] = []) {
     this.party.broadcast(JSON.stringify(msg), excludeIds);
@@ -29,10 +89,14 @@ export default class VillainSmashServer implements Party.Server {
     }
 
     if (req.method === "GET") {
-      // Differentiate between Leaderboard and Game Room
       if (this.party.id === 'global-leaderboard') {
           const lbState = await this.party.storage.get<GlobalLeaderboardState>("lb_state") || {};
-          return new Response(JSON.stringify(lbState), { 
+          const metadata = await this.initializeLeaderboardMetadata();
+          
+          return new Response(JSON.stringify({ 
+            leaderboard: lbState,
+            metadata: metadata
+          }), { 
             headers: { ...CORS_HEADERS, "Content-Type": "application/json" } 
           });
       }
@@ -51,20 +115,23 @@ export default class VillainSmashServer implements Party.Server {
 
   // --- CONNECTION HANDLER ---
   async onConnect(conn: Party.Connection, ctx: Party.ConnectionContext) {
-    // 1. GLOBAL LEADERBOARD LOGIC
     if (this.party.id === 'global-leaderboard') {
-        // EXTRACT GEO INFO FROM CLOUDFLARE REQUEST
-        // Fallback for localhost development
+        await this.resetLeaderboardIfNeeded();
+        
         const country = (ctx.request.cf?.country as string) || 'CN'; 
         const region = (ctx.request.cf?.region as string) || 'Unknown';
         const city = (ctx.request.cf?.city as string) || 'Unknown';
 
-        // Store geo info on the connection object for later use
         conn.setState({ country, region, city });
 
-        // Send current leaderboard state to the new user
         const lbState = await this.party.storage.get<GlobalLeaderboardState>("lb_state") || {};
-        conn.send(JSON.stringify({ type: 'LB_UPDATE', state: lbState }));
+        const metadata = this.leaderboardMetadata;
+        
+        conn.send(JSON.stringify({ 
+          type: 'LB_UPDATE', 
+          state: lbState,
+          metadata: metadata
+        }));
         return;
     }
 
@@ -95,36 +162,38 @@ export default class VillainSmashServer implements Party.Server {
     if (this.party.id === 'global-leaderboard') {
         if (data.type === 'LB_CLICK') {
             const count = data.count || 1;
-            // Retrieve geo info we saved during onConnect
             const geo = sender.state as GeoLocation | null;
             
             if (geo && geo.country) {
                 let lbState = await this.party.storage.get<GlobalLeaderboardState>("lb_state") || {};
                 
-                // Init Country if not exists
                 if (!lbState[geo.country]) {
                     lbState[geo.country] = {
                         name: getCountryName(geo.country),
                         score: 0,
-                        regions: {}
+                        regions: {},
+                        lastUpdated: Date.now(),
+                        totalClicks: 0
                     };
                 }
 
-                // Update Country Score
-                lbState[geo.country].score += count;
+                const countryData = lbState[geo.country];
+                countryData.score += count;
+                countryData.totalClicks += count;
+                countryData.lastUpdated = Date.now();
 
-                // Update Region Score
                 const regionKey = geo.region || 'Unknown';
-                if (!lbState[geo.country].regions[regionKey]) {
-                    lbState[geo.country].regions[regionKey] = 0;
+                if (!countryData.regions[regionKey]) {
+                    countryData.regions[regionKey] = 0;
                 }
-                lbState[geo.country].regions[regionKey] += count;
+                countryData.regions[regionKey] += count;
 
-                // Persist
                 await this.party.storage.put("lb_state", lbState);
+                await this.updateLeaderboardMetadata({
+                    totalGlobalClicks: (this.leaderboardMetadata?.totalGlobalClicks || 0) + count
+                });
 
-                // Throttled Broadcast Update (1 second delay to reduce bandwidth)
-                this.pendingBroadcast = { type: 'LB_UPDATE', state: lbState };
+                this.pendingBroadcast = { type: 'LB_UPDATE', state: lbState, metadata: this.leaderboardMetadata };
                 
                 if (!this.broadcastTimer) {
                     this.broadcastTimer = setTimeout(() => {

@@ -1,8 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import usePartySocket from 'partysocket/react';
-import { GlobalLeaderboardState } from '../partykit/types';
+import { GlobalLeaderboardState, LeaderboardMetadata } from '../partykit/types';
 
-// Replace with your actual deployed PartyKit URL or localhost
 const PARTYKIT_HOST = window.location.hostname === 'localhost' ? '127.0.0.1:1999' : 'villain-smash-party.china-li-bai.partykit.dev/parties/main'; 
 
 interface Props {
@@ -14,9 +13,8 @@ interface Props {
 
 const LeaderboardWidget: React.FC<Props> = ({ clicksToAdd, onClicksSent, isOpen, onToggle }) => {
   const [leaderboard, setLeaderboard] = useState<GlobalLeaderboardState>({});
+  const [metadata, setMetadata] = useState<LeaderboardMetadata | null>(null);
   const [prevLeaderboard, setPrevLeaderboard] = useState<GlobalLeaderboardState>({});
-
-  // Buffer sending clicks to avoid flooding websocket
   const clickBuffer = useRef(0);
 
   const socket = usePartySocket({
@@ -27,6 +25,9 @@ const LeaderboardWidget: React.FC<Props> = ({ clicksToAdd, onClicksSent, isOpen,
       if (msg.type === 'LB_UPDATE') {
         setPrevLeaderboard(leaderboard);
         setLeaderboard(msg.state);
+        if (msg.metadata) {
+          setMetadata(msg.metadata);
+        }
       }
     }
   });
@@ -90,7 +91,15 @@ const LeaderboardWidget: React.FC<Props> = ({ clicksToAdd, onClicksSent, isOpen,
       {/* Drawer - Responsive Width */}
       <div className={`fixed inset-y-0 left-0 w-full sm:w-80 bg-slate-900 border-r border-slate-700 shadow-2xl z-50 transform transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="p-3 sm:p-4 bg-slate-800 border-b border-slate-700 flex justify-between items-center">
-           <h3 className="text-amber-500 font-bold uppercase tracking-widest text-sm sm:text-base">Global Rankings</h3>
+           <div>
+             <h3 className="text-amber-500 font-bold uppercase tracking-widest text-sm sm:text-base">Global Rankings</h3>
+             {metadata && (
+               <div className="text-xs text-slate-400 mt-1">
+                 <span>🌍 Total: {metadata.totalGlobalClicks.toLocaleString()}</span>
+                 <span className="ml-2">📅 Reset: {new Date(metadata.lastReset).toLocaleDateString()}</span>
+               </div>
+             )}
+           </div>
            <button 
              onClick={onToggle} 
              className="text-slate-400 hover:text-white p-2 -mr-2"

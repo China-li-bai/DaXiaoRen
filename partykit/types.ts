@@ -21,14 +21,25 @@ export type LeaderboardEntry = {
   score: number;
 };
 
+export type CountryData = {
+  name: string; // Country Name
+  score: number;
+  regions: {
+    [regionCode: string]: number; // Region score
+  };
+  lastUpdated: number; // Timestamp of last update
+  totalClicks: number; // Total number of clicks
+};
+
 export type GlobalLeaderboardState = {
-  [countryCode: string]: {
-    name: string; // Country Name
-    score: number;
-    regions: {
-      [regionCode: string]: number; // Region score
-    }
-  }
+  [countryCode: string]: CountryData;
+};
+
+export type LeaderboardMetadata = {
+  version: string; // Data structure version
+  lastReset: number; // Timestamp of last data reset
+  totalGlobalClicks: number; // Total clicks across all countries
+  createdAt: number; // When the leaderboard was created
 };
 
 // Messages sent FROM Client TO Server
