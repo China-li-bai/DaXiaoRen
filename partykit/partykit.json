@@ -1,0 +1,12 @@
+{
+  "name": "villain-smash-party",
+  "main": "server.ts",
+  "compatibilityDate": "2025-01-01",
+  "minify": true,
+  "vars": {
+    "API_KEY": {
+      "description": "Google Gemini API Key for AI generation",
+      "dev": "your-dev-api-key"
+    }
+  }
+}

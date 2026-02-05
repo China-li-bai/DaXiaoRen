@@ -1,0 +1,13 @@
+{
+  "name": "villain-smash-party",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "partykit dev",
+    "deploy": "partykit deploy",
+    "deploy:prod": "partykit deploy --prod"
+  },
+  "dependencies": {
+    "partykit": "^0.0.115"
+  }
+}

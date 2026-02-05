@@ -3,7 +3,7 @@ import usePartySocket from 'partysocket/react';
 import { GlobalLeaderboardState } from '../partykit/types';
 
 // Replace with your actual deployed PartyKit URL or localhost
-const PARTYKIT_HOST = window.location.hostname === 'localhost' ? '127.0.0.1:1999' : window.location.host; 
+const PARTYKIT_HOST = window.location.hostname === 'localhost' ? '127.0.0.1:1999' : 'villain-smash-party.china-li-bai.partykit.dev/parties/main'; 
 
 interface Props {
   clicksToAdd: number;

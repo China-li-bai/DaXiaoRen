@@ -1,0 +1,15 @@
+name = "villain-smash-party"
+main = "server.ts"
+compatibility_date = "2025-01-01"
+
+[vars]
+
+[[durable_objects.bindings]]
+name = "PARTYKIT_DO"
+class_name = "VillainSmashServer"
+script_name = "villain-smash-party"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["VillainSmashServer"]
+
