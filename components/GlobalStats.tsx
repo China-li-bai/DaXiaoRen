@@ -1,35 +1,30 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
+import usePartySocket from 'partysocket/react';
 import { Language } from '../types';
+import { getPartyKitHost } from '../config/partykit';
 
 interface Props {
   lang: Language;
 }
 
 const GlobalStats: React.FC<Props> = ({ lang }) => {
-  // Start with a fake high number to create "Social Proof" immediately, then fetch real if possible
-  const [count, setCount] = useState<number>(128490);
-  const [region, setRegion] = useState<string>('Unknown');
+  const [count, setCount] = useState<number>(0);
+  const [metadata, setMetadata] = useState<{ totalGlobalClicks: number } | null>(null);
 
-  useEffect(() => {
-    // 1. Simulate live activity (Fake websocket effect)
-    const interval = setInterval(() => {
-      setCount(prev => prev + Math.floor(Math.random() * 3));
-    }, 2000);
-
-    // 2. Try to get real region
-    try {
-        const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-        const regionName = timeZone.split('/')[1] || timeZone;
-        setRegion(regionName.replace('_', ' '));
-    } catch (e) {
-        // ignore
+  const socket = usePartySocket({
+    host: getPartyKitHost(),
+    room: 'global-leaderboard',
+    onConnect() {
+      console.log('✅ GlobalStats socket connected');
+    },
+    onMessage(event) {
+      const msg = JSON.parse(event.data);
+      if (msg.type === 'LB_UPDATE' && msg.metadata) {
+        setMetadata(msg.metadata);
+        setCount(msg.metadata.totalGlobalClicks);
+      }
     }
-
-    // 3. TODO: If Supabase is connected, fetch real global_stats here
-    // const fetchRealStats = async () => { ... }
-
-    return () => clearInterval(interval);
-  }, []);
+  });
 
   const formatNumber = (num: number) => {
     return new Intl.NumberFormat('en-US').format(num);
@@ -46,18 +41,6 @@ const GlobalStats: React.FC<Props> = ({ lang }) => {
             </p>
             <p className="text-2xl md:text-3xl font-mono font-bold text-amber-500 tabular-nums shadow-amber-500/20 drop-shadow-md">
                 {formatNumber(count)}
-            </p>
-        </div>
-
-        <div className="w-px h-10 bg-slate-700"></div>
-
-        {/* Regional Badge */}
-        <div className="text-center min-w-[80px]">
-             <p className="text-[10px] text-slate-400 uppercase tracking-widest mb-1">
-                {lang === 'en' ? 'Your Sector' : '当前战区'}
-            </p>
-            <p className="text-xs font-bold text-slate-300">
-                📍 {region}
             </p>
         </div>
       </div>
