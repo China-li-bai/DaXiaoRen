@@ -309,8 +309,10 @@ export default class VillainSmashServer implements Party.Server {
     // === GLOBAL LEADERBOARD LOGIC ===
     if (this.party.id === 'global-leaderboard') {
         if (data.type === 'LB_CLICK') {
-            const count = data.count || 1;
+            const count = data.count || 20;
             const geo = sender.state as GeoLocation | null;
+            
+            console.log(`📊 LB_CLICK received: ${count} hits from ${geo?.country || 'Unknown'}`);
             
             if (geo && geo.country) {
                 let lbState = await this.party.storage.get<GlobalLeaderboardState>("lb_state") || {};
@@ -340,6 +342,8 @@ export default class VillainSmashServer implements Party.Server {
                 await this.updateLeaderboardMetadata({
                     totalGlobalClicks: (this.leaderboardMetadata?.totalGlobalClicks || 0) + count
                 });
+
+                console.log(`✅ Leaderboard updated: ${geo.country} +${count}, total: ${countryData.score}`);
 
                 this.pendingBroadcast = { type: 'LB_UPDATE', state: lbState, metadata: this.leaderboardMetadata };
                 

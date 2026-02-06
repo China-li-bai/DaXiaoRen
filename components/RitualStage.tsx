@@ -41,10 +41,11 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
   const [isComplete, setIsComplete] = useState(false);
   const [onlineCount, setOnlineCount] = useState(1);
   const [remoteHits, setRemoteHits] = useState<RemoteHit[]>([]);
+  const [leaderboardSent, setLeaderboardSent] = useState(false);
 
   const currentRoomId = roomId || `room-${villain.name}-${villain.type}`;
 
-  const socket = usePartySocket({
+  const gameSocket = usePartySocket({
     host: getPartyKitHost(),
     room: currentRoomId,
     onMessage(event) {
@@ -90,6 +91,14 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
           setTimeout(onComplete, 800);
         }
       }
+    }
+  });
+
+  const leaderboardSocket = usePartySocket({
+    host: getPartyKitHost(),
+    room: 'global-leaderboard',
+    onConnect() {
+      console.log('✅ RitualStage leaderboard socket connected');
     }
   });
 
@@ -251,16 +260,27 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
     setHits(newHits);
 
     // 6. Send HIT to PartyKit for real-time sync
-    socket.send(JSON.stringify({
+    gameSocket.send(JSON.stringify({
       type: 'HIT',
       damage: 1
     }));
+
+    // 7. Send LB_CLICK to leaderboard every 20 hits (performance optimization)
+    if (newHits % 20 === 0 && !leaderboardSent) {
+      leaderboardSocket.send(JSON.stringify({
+        type: 'LB_CLICK',
+        villainName: villain.name,
+        villainType: villain.type
+      }));
+      setLeaderboardSent(true);
+      setTimeout(() => setLeaderboardSent(false), 5000);
+    }
 
     if (newHits >= TOTAL_HITS_REQUIRED && !isComplete) {
       setIsComplete(true);
       
       // Send COMPLETION message to PartyKit
-      socket.send(JSON.stringify({
+      gameSocket.send(JSON.stringify({
         type: 'COMPLETION',
         isAssistMode: isAssistMode
       }));
@@ -317,12 +337,12 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
 
   // Initialize room on mount
   useEffect(() => {
-    socket.send(JSON.stringify({
+    gameSocket.send(JSON.stringify({
       type: 'INIT',
       villainName: villain.name,
       villainType: villain.type
     }));
-  }, [socket, villain.name, villain.type]);
+  }, [gameSocket, villain.name, villain.type]);
 
   const progress = (hits / TOTAL_HITS_REQUIRED) * 100;
   const isFinished = isComplete || hits >= TOTAL_HITS_REQUIRED;

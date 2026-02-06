@@ -59,7 +59,7 @@ echo ""
 echo -e "${YELLOW}🔍 验证部署...${NC}"
 
 # 检查网站是否可访问
-HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://${DOMAIN})
+HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://${DOMAIN})
 
 if [ "$HTTP_STATUS" = "200" ]; then
     echo -e "${GREEN}✅ 部署成功！${NC}"
