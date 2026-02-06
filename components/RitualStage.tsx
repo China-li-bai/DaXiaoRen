@@ -4,8 +4,7 @@ import { VillainData, Language, ChantResponse } from '../types';
 import { TRANSLATIONS, TOTAL_HITS_REQUIRED } from '../constants';
 import Villain from './Villain';
 import Shoe from './Shoe';
-
-const PARTYKIT_HOST = 'villain-smash-party.china-li-bai.partykit.dev/parties/main';
+import { getPartyKitHost } from '../config/partykit';
 
 interface Props {
   lang: Language;
@@ -46,7 +45,7 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
   const currentRoomId = roomId || `room-${villain.name}-${villain.type}`;
 
   const socket = usePartySocket({
-    host: PARTYKIT_HOST,
+    host: getPartyKitHost(),
     room: currentRoomId,
     onMessage(event) {
       const msg = JSON.parse(event.data);

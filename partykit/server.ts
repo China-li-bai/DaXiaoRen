@@ -128,10 +128,12 @@ export default class VillainSmashServer implements Party.Server {
         
         // Initialize with sample data if empty
         if (!lbState || Object.keys(lbState).length === 0) {
+          console.log('🏆 Initializing leaderboard with sample data...');
+          
           lbState = {
             'CN': {
               name: 'China',
-              score: 1234567,
+              score: 1259255,
               regions: {
                 'BJ': 456789,
                 'SH': 345678,
@@ -140,11 +142,11 @@ export default class VillainSmashServer implements Party.Server {
                 'JS': 98765
               },
               lastUpdated: Date.now(),
-              totalClicks: 1234567
+              totalClicks: 1259255
             },
             'US': {
               name: 'United States',
-              score: 987654,
+              score: 598763,
               regions: {
                 'CA': 234567,
                 'NY': 123456,
@@ -153,11 +155,11 @@ export default class VillainSmashServer implements Party.Server {
                 'WA': 65432
               },
               lastUpdated: Date.now(),
-              totalClicks: 987654
+              totalClicks: 598763
             },
             'JP': {
               name: 'Japan',
-              score: 654321,
+              score: 620985,
               regions: {
                 '13': 234567,
                 '27': 123456,
@@ -166,11 +168,11 @@ export default class VillainSmashServer implements Party.Server {
                 '14': 76543
               },
               lastUpdated: Date.now(),
-              totalClicks: 654321
+              totalClicks: 620985
             },
             'GB': {
               name: 'United Kingdom',
-              score: 432109,
+              score: 420996,
               regions: {
                 'ENG': 234567,
                 'SCT': 87654,
@@ -179,11 +181,11 @@ export default class VillainSmashServer implements Party.Server {
                 'HMF': 12345
               },
               lastUpdated: Date.now(),
-              totalClicks: 432109
+              totalClicks: 420996
             },
             'DE': {
               name: 'Germany',
-              score: 321098,
+              score: 316059,
               regions: {
                 'NW': 87654,
                 'BY': 76543,
@@ -192,11 +194,11 @@ export default class VillainSmashServer implements Party.Server {
                 'HE': 32109
               },
               lastUpdated: Date.now(),
-              totalClicks: 321098
+              totalClicks: 316059
             },
             'FR': {
               name: 'France',
-              score: 287654,
+              score: 304948,
               regions: {
                 'IDF': 98765,
                 'PAC': 76543,
@@ -205,11 +207,11 @@ export default class VillainSmashServer implements Party.Server {
                 'GES': 32109
               },
               lastUpdated: Date.now(),
-              totalClicks: 287654
+              totalClicks: 304948
             },
             'KR': {
               name: 'South Korea',
-              score: 234567,
+              score: 232107,
               regions: {
                 '11': 98765,
                 '41': 65432,
@@ -218,11 +220,11 @@ export default class VillainSmashServer implements Party.Server {
                 '27': 12345
               },
               lastUpdated: Date.now(),
-              totalClicks: 234567
+              totalClicks: 232107
             },
             'CA': {
               name: 'Canada',
-              score: 198765,
+              score: 198281,
               regions: {
                 'ON': 87654,
                 'QC': 65432,
@@ -231,11 +233,11 @@ export default class VillainSmashServer implements Party.Server {
                 'MB': 4321
               },
               lastUpdated: Date.now(),
-              totalClicks: 198765
+              totalClicks: 198281
             },
             'AU': {
               name: 'Australia',
-              score: 165432,
+              score: 164948,
               regions: {
                 'NSW': 65432,
                 'VIC': 54321,
@@ -244,7 +246,7 @@ export default class VillainSmashServer implements Party.Server {
                 'SA': 4321
               },
               lastUpdated: Date.now(),
-              totalClicks: 165432
+              totalClicks: 164948
             },
             'BR': {
               name: 'Brazil',
@@ -261,9 +263,13 @@ export default class VillainSmashServer implements Party.Server {
             }
           };
           
+          // Calculate total global clicks as sum of all country scores
+          const totalGlobalClicks = Object.values(lbState).reduce((sum, country) => sum + country.score, 0);
+          console.log('📊 Total global clicks calculated:', totalGlobalClicks);
+          
           await this.party.storage.put("lb_state", lbState);
           await this.updateLeaderboardMetadata({
-            totalGlobalClicks: 4657372
+            totalGlobalClicks: totalGlobalClicks
           });
         }
         

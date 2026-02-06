@@ -1,8 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import usePartySocket from 'partysocket/react';
 import { GlobalLeaderboardState, LeaderboardMetadata } from '../partykit/types';
-
-const PARTYKIT_HOST = 'villain-smash-party.china-li-bai.partykit.dev/parties/main'; 
+import { getPartyKitHost } from '../config/partykit'; 
 
 interface Props {
   clicksToAdd: number;
@@ -18,10 +17,20 @@ const LeaderboardWidget: React.FC<Props> = ({ clicksToAdd, onClicksSent, isOpen,
   const clickBuffer = useRef(0);
 
   const socket = usePartySocket({
-    host: PARTYKIT_HOST,
+    host: getPartyKitHost(),
     room: "global-leaderboard",
+    onConnect() {
+      console.log('✅ Leaderboard socket connected');
+    },
+    onDisconnect() {
+      console.log('❌ Leaderboard socket disconnected');
+    },
+    onError(err) {
+      console.error('❌ Leaderboard socket error:', err);
+    },
     onMessage(event) {
       const msg = JSON.parse(event.data);
+      console.log('📨 Leaderboard received:', msg.type);
       if (msg.type === 'LB_UPDATE') {
         setPrevLeaderboard(leaderboard);
         setLeaderboard(msg.state);
