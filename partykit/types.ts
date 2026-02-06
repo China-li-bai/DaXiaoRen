@@ -5,6 +5,7 @@ export type RoomState = {
   totalHits: number;
   status: 'ACTIVE' | 'COMPLETED';
   createdAt: number;
+  completedAt?: number;
 };
 
 // --- LEADERBOARD TYPES ---
@@ -47,7 +48,8 @@ export type ClientMessage =
   | { type: 'INIT'; villainName: string; villainType: string } // Host initializes room
   | { type: 'HIT'; damage: number }                            // Someone hits
   | { type: 'EMOJI'; emoji: string }                           // Someone sends reaction
-  | { type: 'LB_CLICK'; count: number };                       // Reporting clicks to leaderboard
+  | { type: 'LB_CLICK'; count: number }                        // Reporting clicks to leaderboard
+  | { type: 'COMPLETION'; isAssistMode: boolean };             // Ritual completed
 
 // Messages sent FROM Server TO Client
 export type ServerMessage = 
@@ -56,4 +58,5 @@ export type ServerMessage =
   | { type: 'USER_JOINED'; count: number }                     // Presence update
   | { type: 'USER_LEFT'; count: number }                       // Presence update
   | { type: 'EMOJI_BROADCAST'; emoji: string; x: number; y: number } // Visual effect
-  | { type: 'LB_UPDATE'; state: GlobalLeaderboardState };       // Leaderboard full update
+  | { type: 'LB_UPDATE'; state: GlobalLeaderboardState }       // Leaderboard full update
+  | { type: 'COMPLETION'; totalHits: number };                 // Ritual completed

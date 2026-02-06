@@ -65,9 +65,13 @@ export default function App() {
   // Share System
   const [showShare, setShowShare] = useState(false);
   const [pendingVillain, setPendingVillain] = useState<VillainData | null>(null);
+  
   // Leaderboard State
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [pendingLeaderboardClicks, setPendingLeaderboardClicks] = useState(0);
+  
+  // Room ID for PartyKit
+  const [roomId, setRoomId] = useState<string | null>(null);
   const t = TRANSLATIONS[lang];
 
   // Initialize: Load credits, history, and CHECK URL PARAMS for Assist Mode
@@ -94,6 +98,11 @@ export default function App() {
         type: sharedType,
         reason: sharedReason
       });
+      
+      // Set room ID for assist mode (use the same room as the original creator)
+      const assistRoomId = `room-${sharedName}-${sharedType}`;
+      setRoomId(assistRoomId);
+      
       // In assist mode, we skip the chant generation API call to be fast (or mock it)
       setChant({
         chantLines: lang === 'zh' 
@@ -140,6 +149,10 @@ export default function App() {
 
     setVillain(data);
     setStep(AppStep.PREPARING);
+    
+    // Generate room ID for PartyKit
+    const newRoomId = `room-${data.name}-${data.type}-${Date.now()}`;
+    setRoomId(newRoomId);
     
     // Call Gemini
     const result = await generateRitualChant(data, lang);
@@ -209,7 +222,19 @@ export default function App() {
     }
 
     if (villain) {
-      const res = await generateResolution(villain, lang);
+      let res: ResolutionResponse;
+      
+      if (isAssistMode) {
+        // In assist mode, use a default resolution without calling API
+        res = {
+          blessing: lang === 'zh' ? '合力封印，功德圆满' : 'Together we purified',
+          advice: lang === 'zh' ? '感谢好友助阵，小人已被成功封印！' : 'Thanks for helping! The villain has been sealed!'
+        };
+      } else {
+        // In normal mode, call the API
+        res = await generateResolution(villain, lang);
+      }
+      
       setResolution(res);
       setStep(AppStep.CONCLUSION);
     }
@@ -358,7 +383,8 @@ export default function App() {
             villain={villain} 
             chantData={chant} 
             onComplete={handleRitualComplete}
-            isAssistMode={isAssistMode} 
+            isAssistMode={isAssistMode}
+            roomId={roomId}
           />
         )}
 

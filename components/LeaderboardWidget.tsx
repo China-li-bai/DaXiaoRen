@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import usePartySocket from 'partysocket/react';
 import { GlobalLeaderboardState, LeaderboardMetadata } from '../partykit/types';
 
-const PARTYKIT_HOST = window.location.hostname === 'localhost' ? '127.0.0.1:1999' : 'villain-smash-party.china-li-bai.partykit.dev/parties/main'; 
+const PARTYKIT_HOST = 'villain-smash-party.china-li-bai.partykit.dev/parties/main'; 
 
 interface Props {
   clicksToAdd: number;
@@ -113,7 +113,11 @@ const LeaderboardWidget: React.FC<Props> = ({ clicksToAdd, onClicksSent, isOpen,
 
         <div className="overflow-y-auto h-full pb-24 sm:pb-20 p-2">
             {sortedCountries.length === 0 ? (
-                <div className="text-center text-slate-500 mt-10 text-xs">Waiting for data...</div>
+                <div className="flex flex-col items-center justify-center mt-10 text-center">
+                    <div className="text-4xl sm:text-5xl mb-4 animate-bounce">🏆</div>
+                    <div className="text-slate-400 text-xs sm:text-sm mb-2">Loading rankings...</div>
+                    <div className="text-slate-500 text-[10px] sm:text-xs">Connecting to global leaderboard</div>
+                </div>
             ) : (
                 <div className="space-y-2">
                     {sortedCountries.map((c, index) => {

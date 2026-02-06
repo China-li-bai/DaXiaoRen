@@ -124,7 +124,149 @@ export default class VillainSmashServer implements Party.Server {
 
         conn.setState({ country, region, city });
 
-        const lbState = await this.party.storage.get<GlobalLeaderboardState>("lb_state") || {};
+        let lbState = await this.party.storage.get<GlobalLeaderboardState>("lb_state");
+        
+        // Initialize with sample data if empty
+        if (!lbState || Object.keys(lbState).length === 0) {
+          lbState = {
+            'CN': {
+              name: 'China',
+              score: 1234567,
+              regions: {
+                'BJ': 456789,
+                'SH': 345678,
+                'GD': 234567,
+                'ZJ': 123456,
+                'JS': 98765
+              },
+              lastUpdated: Date.now(),
+              totalClicks: 1234567
+            },
+            'US': {
+              name: 'United States',
+              score: 987654,
+              regions: {
+                'CA': 234567,
+                'NY': 123456,
+                'TX': 98765,
+                'FL': 76543,
+                'WA': 65432
+              },
+              lastUpdated: Date.now(),
+              totalClicks: 987654
+            },
+            'JP': {
+              name: 'Japan',
+              score: 654321,
+              regions: {
+                '13': 234567,
+                '27': 123456,
+                '40': 98765,
+                '23': 87654,
+                '14': 76543
+              },
+              lastUpdated: Date.now(),
+              totalClicks: 654321
+            },
+            'GB': {
+              name: 'United Kingdom',
+              score: 432109,
+              regions: {
+                'ENG': 234567,
+                'SCT': 87654,
+                'WLS': 54321,
+                'NIR': 32109,
+                'HMF': 12345
+              },
+              lastUpdated: Date.now(),
+              totalClicks: 432109
+            },
+            'DE': {
+              name: 'Germany',
+              score: 321098,
+              regions: {
+                'NW': 87654,
+                'BY': 76543,
+                'BW': 65432,
+                'NI': 54321,
+                'HE': 32109
+              },
+              lastUpdated: Date.now(),
+              totalClicks: 321098
+            },
+            'FR': {
+              name: 'France',
+              score: 287654,
+              regions: {
+                'IDF': 98765,
+                'PAC': 76543,
+                'HDF': 54321,
+                'NOR': 43210,
+                'GES': 32109
+              },
+              lastUpdated: Date.now(),
+              totalClicks: 287654
+            },
+            'KR': {
+              name: 'South Korea',
+              score: 234567,
+              regions: {
+                '11': 98765,
+                '41': 65432,
+                '26': 32109,
+                '28': 23456,
+                '27': 12345
+              },
+              lastUpdated: Date.now(),
+              totalClicks: 234567
+            },
+            'CA': {
+              name: 'Canada',
+              score: 198765,
+              regions: {
+                'ON': 87654,
+                'QC': 65432,
+                'BC': 32109,
+                'AB': 8765,
+                'MB': 4321
+              },
+              lastUpdated: Date.now(),
+              totalClicks: 198765
+            },
+            'AU': {
+              name: 'Australia',
+              score: 165432,
+              regions: {
+                'NSW': 65432,
+                'VIC': 54321,
+                'QLD': 32109,
+                'WA': 8765,
+                'SA': 4321
+              },
+              lastUpdated: Date.now(),
+              totalClicks: 165432
+            },
+            'BR': {
+              name: 'Brazil',
+              score: 143210,
+              regions: {
+                'SP': 65432,
+                'RJ': 43210,
+                'MG': 23456,
+                'RS': 6543,
+                'PR': 4321
+              },
+              lastUpdated: Date.now(),
+              totalClicks: 143210
+            }
+          };
+          
+          await this.party.storage.put("lb_state", lbState);
+          await this.updateLeaderboardMetadata({
+            totalGlobalClicks: 4657372
+          });
+        }
+        
         const metadata = this.leaderboardMetadata;
         
         conn.send(JSON.stringify({ 
@@ -239,6 +381,18 @@ export default class VillainSmashServer implements Party.Server {
             x: Math.random(),
             y: Math.random()
         }, [sender.id]);
+    }
+
+    if (data.type === 'COMPLETION') {
+        let state = await this.party.storage.get<RoomState>("state");
+        if (state && state.status === 'ACTIVE') {
+            state.status = 'COMPLETED';
+            state.completedAt = Date.now();
+            await this.party.storage.put("state", state);
+            
+            // Broadcast completion to all users in the room
+            this.broadcast({ type: 'COMPLETION', totalHits: state.totalHits });
+        }
     }
   }
 }

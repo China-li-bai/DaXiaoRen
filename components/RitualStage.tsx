@@ -1,6 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
+import usePartySocket from 'partysocket/react';
 import { VillainData, Language, ChantResponse } from '../types';
 import { TRANSLATIONS, TOTAL_HITS_REQUIRED } from '../constants';
+
+const PARTYKIT_HOST = 'villain-smash-party.china-li-bai.partykit.dev/parties/main';
 
 interface Props {
   lang: Language;
@@ -8,6 +11,7 @@ interface Props {
   chantData: ChantResponse;
   onComplete: () => void;
   isAssistMode?: boolean;
+  roomId?: string;
 }
 
 interface Particle {
@@ -19,7 +23,14 @@ interface Particle {
   color: string;
 }
 
-const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, isAssistMode = false }) => {
+interface RemoteHit {
+  id: number;
+  x: number;
+  y: number;
+  timestamp: number;
+}
+
+const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, isAssistMode = false, roomId }) => {
   const t = TRANSLATIONS[lang];
   const [hits, setHits] = useState(0);
   const [lastHitTime, setLastHitTime] = useState(0);
@@ -29,6 +40,63 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
   const [particles, setParticles] = useState<Particle[]>([]);
   const [showShareTooltip, setShowShareTooltip] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
+  const [onlineCount, setOnlineCount] = useState(1);
+  const [remoteHits, setRemoteHits] = useState<RemoteHit[]>([]);
+
+  const currentRoomId = roomId || `room-${villain.name}-${villain.type}`;
+
+  const socket = usePartySocket({
+    host: PARTYKIT_HOST,
+    room: currentRoomId,
+    onMessage(event) {
+      const msg = JSON.parse(event.data);
+      if (msg.type === 'HIT_UPDATE') {
+        setHits(msg.totalHits);
+        if (msg.damage) {
+          const remoteHit: RemoteHit = {
+            id: Date.now(),
+            x: Math.random() * window.innerWidth,
+            y: Math.random() * window.innerHeight,
+            timestamp: Date.now()
+          };
+          setRemoteHits(prev => [...prev, remoteHit]);
+          setTimeout(() => {
+            setRemoteHits(prev => prev.filter(h => h.id !== remoteHit.id));
+          }, 1000);
+        }
+      } else if (msg.type === 'USER_JOINED') {
+        setOnlineCount(msg.count);
+      } else if (msg.type === 'USER_LEFT') {
+        setOnlineCount(msg.count);
+      } else if (msg.type === 'SYNC') {
+        setHits(msg.state.totalHits);
+        setOnlineCount(msg.onlineCount);
+        
+        // If the room is already completed, trigger completion
+        if (msg.state.status === 'COMPLETED' && !isComplete) {
+          setIsComplete(true);
+          setTimeout(onComplete, 800);
+        }
+      } else if (msg.type === 'EMOJI_BROADCAST') {
+        const emojiHit: RemoteHit = {
+          id: Date.now(),
+          x: msg.x * window.innerWidth,
+          y: msg.y * window.innerHeight,
+          timestamp: Date.now()
+        };
+        setRemoteHits(prev => [...prev, emojiHit]);
+        setTimeout(() => {
+          setRemoteHits(prev => prev.filter(h => h.id !== emojiHit.id));
+        }, 2000);
+      } else if (msg.type === 'COMPLETION') {
+        // When another user completes the ritual, trigger completion
+        if (!isComplete) {
+          setIsComplete(true);
+          setTimeout(onComplete, 800);
+        }
+      }
+    }
+  });
 
   // Combo System
   const [combo, setCombo] = useState(0);
@@ -187,9 +255,25 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
     const newHits = hits + 1;
     setHits(newHits);
 
+    // 6. Send HIT to PartyKit for real-time sync
+    socket.send(JSON.stringify({
+      type: 'HIT',
+      damage: 1
+    }));
+
     if (newHits >= TOTAL_HITS_REQUIRED && !isComplete) {
       setIsComplete(true);
-      setTimeout(onComplete, 800);
+      
+      // Send COMPLETION message to PartyKit
+      socket.send(JSON.stringify({
+        type: 'COMPLETION',
+        isAssistMode: isAssistMode
+      }));
+      
+      // Only call onComplete if not in assist mode
+      if (!isAssistMode) {
+        setTimeout(onComplete, 800);
+      }
     }
   };
 
@@ -236,12 +320,29 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
       }
   }, [showCombo, combo]);
 
+  // Initialize room on mount
+  useEffect(() => {
+    socket.send(JSON.stringify({
+      type: 'INIT',
+      villainName: villain.name,
+      villainType: villain.type
+    }));
+  }, [socket, villain.name, villain.type]);
+
   const progress = (hits / TOTAL_HITS_REQUIRED) * 100;
   const isFinished = isComplete || hits >= TOTAL_HITS_REQUIRED;
 
   return (
     <div className="flex flex-col items-center justify-between h-full w-full max-w-2xl mx-auto relative select-none">
       
+      {/* Online Count Badge */}
+      <div className="absolute top-2 right-2 z-50 bg-slate-800/80 backdrop-blur-sm border border-slate-600 rounded-full px-3 py-1 flex items-center gap-2">
+        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+        <span className="text-xs font-bold text-slate-300">
+          {onlineCount} {onlineCount === 1 ? 'Online' : 'Online'}
+        </span>
+      </div>
+
       {/* Assist Mode Banner */}
       {isAssistMode && (
         <div className="absolute top-[-40px] z-50 bg-red-600 text-white px-4 py-1 rounded-full text-sm font-bold animate-bounce shadow-lg border border-red-400">
@@ -262,6 +363,21 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
                 '--ty': p.ty
             } as React.CSSProperties}
         />
+      ))}
+
+      {/* Remote Hits from Other Players */}
+      {remoteHits.map(hit => (
+        <div
+          key={hit.id}
+          className="fixed pointer-events-none z-40 animate-ping"
+          style={{
+            left: hit.x,
+            top: hit.y,
+            transform: 'translate(-50%, -50%)'
+          }}
+        >
+          <div className="w-8 h-8 rounded-full bg-amber-500/30 border-2 border-amber-500" />
+        </div>
       ))}
 
       {/* Chant Display */}
