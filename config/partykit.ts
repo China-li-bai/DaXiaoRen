@@ -1,5 +1,7 @@
+const PARTYKIT_HOST = import.meta.env.VITE_PARTYKIT_HOST || 'villain-smash-party.china-li-bai.partykit.dev';
+
 export const PARTYKIT_CONFIG = {
-  host: 'villain-smash-party.china-li-bai.partykit.dev',
+  host: PARTYKIT_HOST,
   rooms: {
     game: (id: string) => `game-${id}`,
     leaderboard: 'global-leaderboard',

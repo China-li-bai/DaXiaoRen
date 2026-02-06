@@ -1,11 +1,9 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { VillainData, Language, ChantResponse, ResolutionResponse, IdentifyResponse } from '../types';
-import { supabase, isSupabaseConfigured } from './supabaseClient';
 
 const CLIENT_API_KEY = process.env.API_KEY || '';
 
 // --- HELPER: Client-Side Fallback (INSECURE - FOR DEV ONLY) ---
-// This contains the old logic. It is only used if Supabase is NOT configured.
 const getClientProvider = (): 'ZHIPU' | 'GEMINI' => {
   if (CLIENT_API_KEY && CLIENT_API_KEY.includes('.') && !CLIENT_API_KEY.startsWith('AIza')) {
     return 'ZHIPU';
@@ -42,22 +40,6 @@ async function clientSideZhipuCall(messages: any[], webSearch = false): Promise<
 // --- MAIN FUNCTIONS ---
 
 export const identifyVillain = async (query: string, lang: Language): Promise<IdentifyResponse> => {
-  // 1. SECURE PATH: Supabase Edge Function
-  if (isSupabaseConfigured()) {
-    console.log("[Service] Using Secure Backend (Supabase)...");
-    const { data, error } = await supabase!.functions.invoke('villain-bot', {
-      body: { action: 'identify', lang, data: { query } }
-    });
-    if (error) {
-      console.error("Supabase Function Error:", error);
-      throw error;
-    }
-    return data as IdentifyResponse;
-  }
-
-  // 2. INSECURE PATH: Client-Side (Fallback)
-  console.warn("[Service] Supabase not configured. Using client-side API (Exposed Key).");
-  
   try {
     if (getClientProvider() === 'ZHIPU') {
       const prompt = lang === 'en' 
@@ -91,15 +73,6 @@ export const identifyVillain = async (query: string, lang: Language): Promise<Id
 };
 
 export const generateRitualChant = async (villain: VillainData, lang: Language): Promise<ChantResponse> => {
-  if (isSupabaseConfigured()) {
-    const { data, error } = await supabase!.functions.invoke('villain-bot', {
-      body: { action: 'chant', lang, data: { name: villain.name, type: villain.type, reason: villain.reason } }
-    });
-    if (error) throw error;
-    return data as ChantResponse;
-  }
-
-  // Fallback
   try {
     if (getClientProvider() === 'ZHIPU') {
       const sys = lang === 'en' ? "Generate ritual chant. Return JSON." : "你是打小人神婆。生成口诀和指导。返回JSON。";
@@ -126,18 +99,9 @@ export const generateRitualChant = async (villain: VillainData, lang: Language):
 };
 
 export const generateResolution = async (villain: VillainData, lang: Language): Promise<ResolutionResponse> => {
-  if (isSupabaseConfigured()) {
-    const { data, error } = await supabase!.functions.invoke('villain-bot', {
-      body: { action: 'resolve', lang, data: { name: villain.name } }
-    });
-    if (error) throw error;
-    return data as ResolutionResponse;
-  }
-
-  // Fallback
   try {
     if (getClientProvider() === 'ZHIPU') {
-      const sys = lang === 'en' ? "Bless the USER not the villain. Return JSON." : "你是转运大师。请祝福用户（操作者），不要祝福小人。返回JSON。";
+      const sys = lang === 'en' ? "Blessing for USER not villain. Return JSON." : "你是转运大师。请祝福用户（操作者），不要祝福小人。返回JSON。";
       const usr = `User banished ${villain.name}.`;
       return await clientSideZhipuCall([{ role: "system", content: sys }, { role: "user", content: usr }]);
     } else {
