@@ -2,6 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import usePartySocket from 'partysocket/react';
 import { VillainData, Language, ChantResponse } from '../types';
 import { TRANSLATIONS, TOTAL_HITS_REQUIRED } from '../constants';
+import Villain from './Villain';
+import Shoe from './Shoe';
 
 const PARTYKIT_HOST = 'villain-smash-party.china-li-bai.partykit.dev/parties/main';
 
@@ -25,8 +27,6 @@ interface Particle {
 
 interface RemoteHit {
   id: number;
-  x: number;
-  y: number;
   timestamp: number;
 }
 
@@ -55,8 +55,6 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
         if (msg.damage) {
           const remoteHit: RemoteHit = {
             id: Date.now(),
-            x: Math.random() * window.innerWidth,
-            y: Math.random() * window.innerHeight,
             timestamp: Date.now()
           };
           setRemoteHits(prev => [...prev, remoteHit]);
@@ -80,8 +78,6 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
       } else if (msg.type === 'EMOJI_BROADCAST') {
         const emojiHit: RemoteHit = {
           id: Date.now(),
-          x: msg.x * window.innerWidth,
-          y: msg.y * window.innerHeight,
           timestamp: Date.now()
         };
         setRemoteHits(prev => [...prev, emojiHit]);
@@ -365,21 +361,6 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
         />
       ))}
 
-      {/* Remote Hits from Other Players */}
-      {remoteHits.map(hit => (
-        <div
-          key={hit.id}
-          className="fixed pointer-events-none z-40 animate-ping"
-          style={{
-            left: hit.x,
-            top: hit.y,
-            transform: 'translate(-50%, -50%)'
-          }}
-        >
-          <div className="w-8 h-8 rounded-full bg-amber-500/30 border-2 border-amber-500" />
-        </div>
-      ))}
-
       {/* Chant Display */}
       <div className="bg-black/60 p-4 rounded-lg border border-red-800 text-center mb-4 w-full backdrop-blur-sm z-30 transition-all duration-300">
         {chantData.chantLines.map((line, idx) => (
@@ -408,57 +389,14 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
         </div>
 
         {/* The Paper Villain */}
-        <div 
-          className={`relative transition-all duration-75 ease-in-out transform flex flex-col items-center justify-center
-            ${isShaking ? 'shake-hard' : ''}
-            ${impactEffect ? 'scale-90' : 'scale-100'}
-            ${isFinished ? 'opacity-0 scale-50 filter blur-xl transition-all duration-700' : 'opacity-100'}
-          `}
-        >
-           {/* SVG representation of a "Petty Person" paper cutout */}
-           <div className="relative">
-             <svg width="200" height="260" viewBox="0 0 100 130" className="drop-shadow-2xl">
-                {/* Paper Body */}
-                <path 
-                  d="M50 5 C 40 5, 35 15, 35 25 C 35 35, 40 40, 30 45 L 20 50 L 30 55 C 25 70, 25 90, 30 110 L 25 125 L 45 120 L 50 125 L 55 120 L 75 125 L 70 110 C 75 90, 75 70, 70 55 L 80 50 L 70 45 C 60 40, 65 35, 65 25 C 65 15, 60 5, 50 5 Z" 
-                  fill="#fde68a" 
-                  stroke="#b45309" 
-                  strokeWidth="2"
-                />
-                
-                {/* Talisman Markings (Decorations) */}
-                <path d="M50 10 L 50 115" stroke="#fbbf24" strokeWidth="1" strokeDasharray="2,2" opacity="0.5" />
-
-                {/* Eyes - Only show if no custom avatar */}
-                {!villain.imageUrl && (
-                  <>
-                    <circle cx="43" cy="20" r="2" fill="#78350f" />
-                    <circle cx="57" cy="20" r="2" fill="#78350f" />
-                    {/* Frown */}
-                    <path d="M45 30 Q 50 25 55 30" stroke="#78350f" strokeWidth="1" fill="none" />
-                  </>
-                )}
-
-                {/* Name written on body */}
-                <text x="50" y="65" textAnchor="middle" fontSize="9" fill="#991b1b" fontFamily="serif" fontWeight="bold" className="uppercase">
-                  {villain.name.substring(0, 12)}
-                </text>
-                
-                {/* Damage overlays based on hits (Progressive destruction) */}
-                {hits > 3 && <path d="M35 45 L 55 55" stroke="red" strokeWidth="2" opacity="0.6" />}
-                {hits > 7 && <path d="M75 35 L 45 55" stroke="red" strokeWidth="2" opacity="0.7" />}
-                {hits > 12 && <path d="M25 85 L 75 95" stroke="red" strokeWidth="3" opacity="0.8" />}
-                {hits > 16 && <path d="M50 15 L 50 120" stroke="red" strokeWidth="4" opacity="0.9" />}
-             </svg>
-
-             {/* Custom Avatar Overlay */}
-             {villain.imageUrl && (
-               <div className="absolute top-[10px] left-1/2 -translate-x-1/2 w-[40px] h-[40px] rounded-full overflow-hidden border-2 border-amber-900 opacity-90 mix-blend-multiply pointer-events-none">
-                 <img src={villain.imageUrl} alt="Villain" className="w-full h-full object-cover grayscale contrast-125" />
-               </div>
-             )}
-           </div>
-        </div>
+        <Villain 
+          villain={villain}
+          hits={hits}
+          isShaking={isShaking}
+          isFinished={isFinished}
+          hasImpact={!!impactEffect}
+          remoteHitsCount={remoteHits.length}
+        />
 
         {/* The Shoe & Impact (follows click) */}
         {impactEffect && (
@@ -467,32 +405,15 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
              style={{ 
                left: impactEffect.x, 
                top: impactEffect.y,
-               transform: `translate(-50%, -50%) rotate(${shoeRotation}deg) scale(1.1)`,
+               transform: `translate(-50%, -50%)`,
              }}
            >
-              {/* Shoe SVG - More realistic slipper shape */}
-              <svg width="140" height="90" viewBox="0 0 100 60" className="drop-shadow-2xl filter drop-shadow-[0_0_10px_rgba(255,255,255,0.3)]">
-                {/* Sole */}
-                <path 
-                  d="M5 30 Q 5 55 25 58 L 85 58 Q 98 58 98 40 Q 98 22 85 22 L 35 22 Q 5 22 5 30 Z" 
-                  fill="#1e293b" 
-                  stroke="#fbbf24" 
-                  strokeWidth="2"
-                />
-                {/* Strap */}
-                <path d="M20 23 C 20 5, 50 5, 50 23" fill="none" stroke="#ef4444" strokeWidth="8" strokeLinecap="round" />
-                <path d="M20 23 C 20 5, 50 5, 50 23" fill="none" stroke="#fbbf24" strokeWidth="2" strokeLinecap="round" strokeDasharray="2,4" />
-              </svg>
-              
-              {/* Pow Effect Text - Dynamic words */}
-              <div 
-                className="absolute top-0 left-0 -mt-20 -ml-16 text-6xl font-black text-amber-400 animate-bounce"
-                style={{ transform: `rotate(${impactEffect.textRotation}deg)` }}
-              >
-                <span className="drop-shadow-[3px_3px_0_#b45309] stroke-2 stroke-white">
-                    {['啪!', '打!', 'POW!', 'SMASH!'][Math.floor(Math.random()*4)]}
-                </span>
-              </div>
+              <Shoe 
+                rotation={shoeRotation} 
+                scale={1.1} 
+                showText={true}
+                textRotation={impactEffect.textRotation}
+              />
            </div>
         )}
       </div>
