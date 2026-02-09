@@ -382,6 +382,16 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
 
       {/* Chant Display */}
       <div className="bg-black/60 p-4 rounded-lg border border-red-800 text-center mb-4 w-full backdrop-blur-sm z-30 transition-all duration-300">
+        <div className="mb-3 pb-2 border-b border-amber-600/30">
+          <p className="text-xs text-amber-500/80 uppercase tracking-widest">
+            📜 {lang === 'zh' ? '传统口诀文化' : 'Traditional Chant Culture'}
+          </p>
+          <p className="text-[10px] text-slate-400 mt-1">
+            {lang === 'zh' 
+              ? '打小人时念诵的口诀，是民俗文化的重要组成部分。口诀通常包含：指名道姓、陈述罪状、祈求平安等内容。'
+              : 'Chants recited during the ritual are an important part of folk culture. They typically include: naming the villain, stating grievances, and praying for peace.'}
+          </p>
+        </div>
         {chantData.chantLines.map((line, idx) => (
           <p 
             key={idx} 

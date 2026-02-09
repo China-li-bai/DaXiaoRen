@@ -6,6 +6,7 @@ import { getLocalRecords, saveLocalRecord, deleteLocalRecord } from './services/
 import LanguageSwitch from './components/LanguageSwitch';
 import GlobalStats from './components/GlobalStats';
 import LeaderboardWidget from './components/LeaderboardWidget';
+import HeritageBadge from './components/HeritageBadge';
 
 const VillainForm = lazy(() => import('./components/VillainForm'));
 const RitualStage = lazy(() => import('./components/RitualStage'));
@@ -264,6 +265,8 @@ export default function App() {
       {renderBackground()}
 
       <LiveTicker lang={lang} />
+
+      <HeritageBadge lang={lang} />
 
       <LanguageSwitch lang={lang} setLang={setLang} />
 
