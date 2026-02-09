@@ -114,20 +114,35 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
   });
 
   const [hasAutoPlayed, setHasAutoPlayed] = useState(false);
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('soundEnabled');
+      return saved !== null ? saved === 'true' : true;
+    }
+    return true;
+  });
 
   const speakChant = (text: string) => {
-    if (speechSupported) {
+    if (speechSupported && soundEnabled) {
       speak(text);
     }
   };
 
   const speakAllChants = () => {
-    if (speechSupported && !hasAutoPlayed && chantData.chantLines.length > 0) {
+    if (speechSupported && soundEnabled && !hasAutoPlayed && chantData.chantLines.length > 0) {
       setHasAutoPlayed(true);
       
       const allChants = chantData.chantLines.join('，');
       speak(allChants);
     }
+  };
+
+  const toggleSound = () => {
+    setSoundEnabled(prev => {
+      const newValue = !prev;
+      localStorage.setItem('soundEnabled', String(newValue));
+      return newValue;
+    });
   };
 
   // Combo System
@@ -383,12 +398,28 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
   return (
     <div className="flex flex-col items-center justify-between h-full w-full max-w-2xl mx-auto relative select-none">
       
-      {/* Online Count Badge */}
-      <div className="absolute top-2 right-2 z-50 bg-slate-800/80 backdrop-blur-sm border border-slate-600 rounded-full px-3 py-1 flex items-center gap-2">
-        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-        <span className="text-xs font-bold text-slate-300">
-          {onlineCount} {onlineCount === 1 ? 'Online' : 'Online'}
-        </span>
+      {/* Top Controls Bar */}
+      <div className="absolute top-2 right-2 z-50 flex items-center gap-2">
+        {/* Sound Toggle */}
+        <button
+          onClick={toggleSound}
+          className="bg-slate-800/80 backdrop-blur-sm border border-slate-600 rounded-full px-3 py-1 flex items-center gap-2 hover:bg-slate-700/80 transition-colors"
+          title={soundEnabled ? '关闭声音' : '开启声音'}
+        >
+          {soundEnabled ? (
+            <span className="text-lg">🔊</span>
+          ) : (
+            <span className="text-lg">🔇</span>
+          )}
+        </button>
+
+        {/* Online Count Badge */}
+        <div className="bg-slate-800/80 backdrop-blur-sm border border-slate-600 rounded-full px-3 py-1 flex items-center gap-2">
+          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+          <span className="text-xs font-bold text-slate-300">
+            {onlineCount} {onlineCount === 1 ? 'Online' : 'Online'}
+          </span>
+        </div>
       </div>
 
       {/* Assist Mode Banner */}
@@ -416,10 +447,17 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
       {/* Chant Display */}
       <div className="bg-black/60 p-4 rounded-lg border border-red-800 text-center mb-4 w-full backdrop-blur-sm z-30 transition-all duration-300">
         <div className="mb-3 pb-2 border-b border-amber-600/30">
-          <p className="text-xs text-amber-500/80 uppercase tracking-widest">
-            📜 {lang === 'zh' ? '传统口诀文化' : 'Traditional Chant Culture'}
-          </p>
-          <p className="text-[10px] text-slate-400 mt-1">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <p className="text-xs text-amber-500/80 uppercase tracking-widest">
+              📜 {lang === 'zh' ? '传统口诀文化' : 'Traditional Chant Culture'}
+            </p>
+            {!soundEnabled && (
+              <p className="text-[10px] text-slate-400 animate-pulse">
+                🔇 {lang === 'zh' ? '声音已关闭' : 'Sound Off'}
+              </p>
+            )}
+          </div>
+          <p className="text-[10px] text-slate-400">
             {lang === 'zh' 
               ? '打小人时念诵的口诀，是民俗文化的重要组成部分。口诀通常包含：指名道姓、陈述罪状、祈求平安等内容。'
               : 'Chants recited during the ritual are an important part of folk culture. They typically include: naming the villain, stating grievances, and praying for peace.'}
@@ -435,11 +473,13 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
               {line}
             </span>
             <button 
-              className="text-slate-500 hover:text-amber-500 transition-colors opacity-0 group-hover:opacity-100"
+              className="text-slate-500 hover:text-amber-500 transition-colors opacity-0 group-hover:opacity-100 disabled:opacity-30"
               onClick={(e) => {
                 e.stopPropagation();
                 speakChant(line);
               }}
+              disabled={!soundEnabled}
+              title={!soundEnabled ? (lang === 'zh' ? '请先开启声音' : 'Please enable sound first') : undefined}
             >
               🔊
             </button>
