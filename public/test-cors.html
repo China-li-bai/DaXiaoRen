@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TTS CORS 测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #007bff;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .info {
+            background-color: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
+        }
+        textarea {
+            width: 100%;
+            height: 100px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-family: monospace;
+            box-sizing: border-box;
+        }
+        select {
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #3498db;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎙️ TTS Worker CORS 测试</h1>
+        
+        <div class="test-section">
+            <h3>1. Worker URL 配置</h3>
+            <p>Worker URL: <code>https://shu.66666618.xyz</code></p>
+            <p>API 端点: <code>/v1/audio/speech</code></p>
+            <p>完整 URL: <code>https://shu.66666618.xyz/v1/audio/speech</code></p>
+        </div>
+
+        <div class="test-section">
+            <h3>2. 测试输入</h3>
+            <textarea id="textInput">你好，这是一个测试。</textarea>
+            <br><br>
+            <label>选择语音：</label>
+            <select id="voiceSelect">
+                <option value="zh-CN-XiaoxiaoNeural">晓晓 (zh-CN-XiaoxiaoNeural)</option>
+                <option value="zh-CN-YunyangNeural">云扬 (zh-CN-YunyangNeural)</option>
+                <option value="zh-CN-YunjianNeural">云健 (zh-CN-YunjianNeural)</option>
+                <option value="zh-CN-XiaoyiNeural">晓伊 (zh-CN-XiaoyiNeural)</option>
+                <option value="zh-CN-YunxiNeural">云希 (zh-CN-YunxiNeural)</option>
+                <option value="zh-CN-liaoning-XiaobeiNeural">晓北 (zh-CN-liaoning-XiaobeiNeural)</option>
+            </select>
+            <br><br>
+            <button id="testButton" onclick="testTTS()">测试 TTS</button>
+            <button onclick="testCORS()">测试 CORS</button>
+        </div>
+
+        <div class="test-section">
+            <h3>3. 测试结果</h3>
+            <div id="result" class="result info">点击按钮开始测试...</div>
+        </div>
+
+        <div class="test-section">
+            <h3>4. 音频播放</h3>
+            <audio id="audioPlayer" controls></audio>
+        </div>
+    </div>
+
+    <script>
+        const WORKER_URL = 'https://shu.66666618.xyz';
+        const API_ENDPOINT = '/v1/audio/speech';
+
+        function updateResult(message, type = 'info') {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = `result ${type}`;
+            resultDiv.textContent = message;
+        }
+
+        function updateResultWithLoading(message, isLoading = false) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.className = 'result info';
+            if (isLoading) {
+                resultDiv.innerHTML = message + '<span class="loading"></span>';
+            } else {
+                resultDiv.textContent = message;
+            }
+        }
+
+        async function testCORS() {
+            updateResultWithLoading('正在测试 CORS...', true);
+            
+            try {
+                // 测试 OPTIONS 预检请求
+                const optionsResponse = await fetch(WORKER_URL + API_ENDPOINT, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                console.log('OPTIONS Response:', optionsResponse);
+                
+                const corsHeaders = {
+                    'Access-Control-Allow-Origin': optionsResponse.headers.get('Access-Control-Allow-Origin'),
+                    'Access-Control-Allow-Methods': optionsResponse.headers.get('Access-Control-Allow-Methods'),
+                    'Access-Control-Allow-Headers': optionsResponse.headers.get('Access-Control-Allow-Headers'),
+                    'Access-Control-Max-Age': optionsResponse.headers.get('Access-Control-Max-Age'),
+                };
+                
+                console.log('CORS Headers:', corsHeaders);
+                
+                let result = '✅ CORS 测试成功！\n\n';
+                result += `状态码: ${optionsResponse.status}\n`;
+                result += `Access-Control-Allow-Origin: ${corsHeaders['Access-Control-Allow-Origin']}\n`;
+                result += `Access-Control-Allow-Methods: ${corsHeaders['Access-Control-Allow-Methods']}\n`;
+                result += `Access-Control-Allow-Headers: ${corsHeaders['Access-Control-Allow-Headers']}\n`;
+                
+                updateResult(result, 'success');
+            } catch (error) {
+                console.error('CORS Test Error:', error);
+                updateResult(`❌ CORS 测试失败！\n\n错误: ${error.message}\n\n请检查 Worker 的 CORS 配置。`, 'error');
+            }
+        }
+
+        async function testTTS() {
+            const text = document.getElementById('textInput').value;
+            const voice = document.getElementById('voiceSelect').value;
+            
+            if (!text) {
+                updateResult('❌ 请输入测试文本！', 'error');
+                return;
+            }
+            
+            updateResultWithLoading('正在生成语音...', true);
+            
+            try {
+                console.log('Sending request to:', WORKER_URL + API_ENDPOINT);
+                console.log('Request body:', {
+                    model: 'microsoft-tts',
+                    input: text,
+                    voice: voice,
+                    speed: 1.0,
+                    pitch: 1.0
+                });
+                
+                const response = await fetch(WORKER_URL + API_ENDPOINT, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        model: 'microsoft-tts',
+                        input: text,
+                        voice: voice,
+                        speed: 1.0,
+                        pitch: 1.0
+                    })
+                });
+                
+                console.log('Response:', response);
+                
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    console.error('Response error:', errorText);
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
+                }
+                
+                const audioBlob = await response.blob();
+                console.log('Audio blob size:', audioBlob.size);
+                
+                const audioUrl = URL.createObjectURL(audioBlob);
+                const audioPlayer = document.getElementById('audioPlayer');
+                audioPlayer.src = audioUrl;
+                
+                updateResult(`✅ TTS 测试成功！\n\n音频大小: ${audioBlob.size} 字节\n语音: ${voice}\n文本: ${text}`, 'success');
+                
+                audioPlayer.play();
+            } catch (error) {
+                console.error('TTS Test Error:', error);
+                updateResult(`❌ TTS 测试失败！\n\n错误: ${error.message}\n\n请检查：\n1. Worker URL 是否正确\n2. CORS 配置是否正确\n3. 网络连接是否正常`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>

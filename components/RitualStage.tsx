@@ -105,12 +105,12 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
 
   const { speak, isSupported: speechSupported, getBestVoice } = useSpeechSynthesis({
     lang: lang === 'zh' ? 'zh-HK' : 'en-US',
-    rate: 0.85,
-    pitch: 1.0,
+    rate: 0.95,
+    pitch: 1.05,
     volume: 1.0,
     useEdgeTTS: true,
-    edgeVoice: lang === 'zh' ? 'Microsoft Yating (zh-HK)' : 'Microsoft Jenny (en-US)',
-    edgeTTSProxy: 'https://dadaxiaoren.com/tts'
+    edgeVoice: lang === 'zh' ? 'zh-HK-HiuMaanNeural' : 'en-US-JennyNeural',
+    workerUrl: 'https://shu.66666618.xyz'
   });
 
   const [hasAutoPlayed, setHasAutoPlayed] = useState(false);

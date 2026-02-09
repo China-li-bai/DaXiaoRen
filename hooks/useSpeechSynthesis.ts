@@ -7,7 +7,7 @@ interface SpeechSynthesisOptions {
   volume?: number;
   useEdgeTTS?: boolean;
   edgeVoice?: string;
-  edgeTTSProxy?: string;
+  workerUrl?: string;
 }
 
 export const useSpeechSynthesis = (options: SpeechSynthesisOptions = {}) => {
@@ -67,9 +67,9 @@ export const useSpeechSynthesis = (options: SpeechSynthesisOptions = {}) => {
     const utterance = new SpeechSynthesisUtterance(text);
     utteranceRef.current = utterance;
 
-    utterance.lang = options.lang || 'zh-CN';
-    utterance.rate = options.rate || 1;
-    utterance.pitch = options.pitch || 1;
+    utterance.lang = options.lang || 'zh-HK';
+    utterance.rate = options.rate || 0.95;
+    utterance.pitch = options.pitch || 1.05;
     utterance.volume = options.volume || 1;
 
     const bestVoice = getBestVoice();
@@ -90,109 +90,53 @@ export const useSpeechSynthesis = (options: SpeechSynthesisOptions = {}) => {
       audioRef.current = null;
     }
 
-    if (workerRef.current) {
-      workerRef.current.terminate();
-    }
-
     setIsSpeaking(true);
 
-    const proxyUrl = options.edgeTTSProxy || 'https://speech.platform.bing.com/consumer/speech/synthesize/readaloud/edge/v1';
+    const baseUrl = options.workerUrl || 'https://shu.66666618.xyz';
+    const workerApiUrl = baseUrl.endsWith('/') 
+      ? `${baseUrl}v1/audio/speech` 
+      : `${baseUrl}/v1/audio/speech`;
 
-    const workerBlob = new Blob([`
-      const EDGE_TTS_URL = '${proxyUrl}';
+    fetch(workerApiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'microsoft-tts',
+        input: text,
+        voice: options.edgeVoice || 'zh-HK-HiuMaanNeural',
+        speed: options.rate || 0.95,
+        pitch: options.pitch || 1.05
+      })
+    })
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`Worker TTS 请求失败: ${response.status}`);
+      }
+      return response.blob();
+    })
+    .then(audioBlob => {
+      const audioUrl = URL.createObjectURL(audioBlob);
+      
+      const audio = new Audio(audioUrl);
+      audioRef.current = audio;
 
-      self.onmessage = async (e) => {
-        const { text, voice, rate, pitch, useProxy } = e.data;
-
-        try {
-          const audioData = await fetchEdgeTTS(text, voice, rate, pitch, useProxy);
-          self.postMessage({ success: true, audioData }, [audioData]);
-        } catch (error) {
-          self.postMessage({ success: false, error: error.message });
-        }
+      audio.onended = () => {
+        setIsSpeaking(false);
+        URL.revokeObjectURL(audioUrl);
       };
 
-      async function fetchEdgeTTS(text, voice, rate, pitch, useProxy) {
-        const ssml = generateSSML(text, voice, rate, pitch);
-        
-        const url = useProxy ? 
-          'https://dadaxiaoren.com/tts?' + new URLSearchParams({
-            text: text,
-            voice: voice,
-            rate: rate,
-            pitch: pitch
-          }) :
-          EDGE_TTS_URL;
-        
-        const response = await fetch(url, {
-          method: useProxy ? 'GET' : 'POST',
-          headers: useProxy ? {} : {
-            'Content-Type': 'application/ssml+xml',
-            'X-Microsoft-OutputFormat': 'audio-24khz-48kbitrate-mono-mp3',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0'
-          },
-          body: useProxy ? undefined : ssml
-        });
-
-        if (!response.ok) {
-          throw new Error('Edge TTS request failed: ' + response.status);
-        }
-
-        return await response.arrayBuffer();
-      }
-
-      function generateSSML(text, voice, rate, pitch) {
-        const rateValue = (rate * 100).toFixed(0);
-        const pitchValue = (pitch * 100).toFixed(0);
-        
-        return '<speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="zh-CN">' +
-          '<voice name="' + voice + '">' +
-          '<prosody rate="' + rateValue + '%" pitch="' + pitchValue + '%">' +
-          text +
-          '</prosody>' +
-          '</voice>' +
-          '</speak>';
-      }
-    `], { type: 'application/javascript' });
-
-    const workerUrl = URL.createObjectURL(workerBlob);
-    const worker = new Worker(workerUrl);
-    workerRef.current = worker;
-
-    worker.onmessage = (e: MessageEvent) => {
-      if (e.data.success) {
-        const audioBlob = new Blob([e.data.audioData], { type: 'audio/mpeg' });
-        const audioUrl = URL.createObjectURL(audioBlob);
-        
-        const audio = new Audio(audioUrl);
-        audioRef.current = audio;
-
-        audio.onended = () => {
-          setIsSpeaking(false);
-          URL.revokeObjectURL(audioUrl);
-        };
-
-        audio.onerror = () => {
-          setIsSpeaking(false);
-          URL.revokeObjectURL(audioUrl);
-        };
-
-        audio.play();
-      } else {
-        console.error('Edge TTS error:', e.data.error);
+      audio.onerror = () => {
         setIsSpeaking(false);
-      }
+        URL.revokeObjectURL(audioUrl);
+      };
 
-      worker.terminate();
-      URL.revokeObjectURL(workerUrl);
-    };
-
-    worker.postMessage({
-      text,
-      voice: options.edgeVoice,
-      rate: options.rate || 1,
-      pitch: options.pitch || 1,
-      useProxy: !!options.edgeTTSProxy
+      audio.play();
+    })
+    .catch(error => {
+      console.error('Worker TTS error:', error);
+      setIsSpeaking(false);
     });
   };
 
