@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
+  <!-- Background -->
+  <rect width="32" height="32" fill="#0f172a" rx="6"/>
+  
+  <!-- Shoe Icon -->
+  <g transform="translate(4, 6) scale(0.25)">
+    <!-- Sole -->
+    <path d="M5 30 Q 5 55 25 58 L 85 58 Q 98 58 98 40 Q 98 22 85 22 L 35 22 Q 5 22 5 30 Z" fill="#1e293b" stroke="#fbbf24" stroke-width="2"/>
+    <!-- Strap -->
+    <path d="M20 23 C 20 5, 50 5, 50 23" fill="none" stroke="#ef4444" stroke-width="8" stroke-linecap="round"/>
+    <path d="M20 23 C 20 5, 50 5, 50 23" fill="none" stroke="#fbbf24" stroke-width="2" stroke-linecap="round" stroke-dasharray="2,4"/>
+  </g>
+</svg>
