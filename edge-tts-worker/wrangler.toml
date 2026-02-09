@@ -1,0 +1,11 @@
+name = "edge-tts-proxy"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+[vars]
+ENVIRONMENT = "production"
+
+[[routes]]
+pattern = "https://shu.66666618.xyz/*"
+zone_name = "66666618.xyz"
