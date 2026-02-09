@@ -5,6 +5,7 @@ import { TRANSLATIONS, TOTAL_HITS_REQUIRED } from '../constants';
 import Villain from './Villain';
 import Shoe from './Shoe';
 import { getPartyKitHost } from '../config/partykit';
+import { useSpeechSynthesis } from '../hooks/useSpeechSynthesis';
 
 interface Props {
   lang: Language;
@@ -101,6 +102,33 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
       console.log('✅ RitualStage leaderboard socket connected');
     }
   });
+
+  const { speak, isSupported: speechSupported, getBestVoice } = useSpeechSynthesis({
+    lang: lang === 'zh' ? 'zh-HK' : 'en-US',
+    rate: 0.85,
+    pitch: 1.0,
+    volume: 1.0,
+    useEdgeTTS: true,
+    edgeVoice: lang === 'zh' ? 'Microsoft Yating (zh-HK)' : 'Microsoft Jenny (en-US)',
+    edgeTTSProxy: 'https://dadaxiaoren.com/tts'
+  });
+
+  const [hasAutoPlayed, setHasAutoPlayed] = useState(false);
+
+  const speakChant = (text: string) => {
+    if (speechSupported) {
+      speak(text);
+    }
+  };
+
+  const speakAllChants = () => {
+    if (speechSupported && !hasAutoPlayed && chantData.chantLines.length > 0) {
+      setHasAutoPlayed(true);
+      
+      const allChants = chantData.chantLines.join('，');
+      speak(allChants);
+    }
+  };
 
   // Combo System
   const [combo, setCombo] = useState(0);
@@ -259,6 +287,11 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
     const newHits = hits + 1;
     setHits(newHits);
 
+    // Auto-play all chants on first hit
+    if (hits === 0) {
+      speakAllChants();
+    }
+
     // 6. Send HIT to PartyKit for real-time sync
     gameSocket.send(JSON.stringify({
       type: 'HIT',
@@ -393,12 +426,24 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
           </p>
         </div>
         {chantData.chantLines.map((line, idx) => (
-          <p 
+          <div 
             key={idx} 
-            className={`text-lg md:text-xl font-bold ${idx % 2 === 0 ? 'text-amber-400' : 'text-red-400'}`}
+            className="flex items-center justify-center gap-2 group cursor-pointer hover:bg-white/5 rounded px-2 py-1 transition-colors"
+            onClick={() => speakChant(line)}
           >
-            {line}
-          </p>
+            <span className={`text-lg md:text-xl font-bold ${idx % 2 === 0 ? 'text-amber-400' : 'text-red-400'}`}>
+              {line}
+            </span>
+            <button 
+              className="text-slate-500 hover:text-amber-500 transition-colors opacity-0 group-hover:opacity-100"
+              onClick={(e) => {
+                e.stopPropagation();
+                speakChant(line);
+              }}
+            >
+              🔊
+            </button>
+          </div>
         ))}
       </div>
 
