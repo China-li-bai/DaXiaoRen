@@ -5,6 +5,7 @@ import { generateRitualChant, generateResolution } from './services/workerServic
 import { getLocalRecords, saveLocalRecord, deleteLocalRecord } from './services/storageService';
 import { Diagnosis, generateDiagnosis } from './utils/bazi';
 import { saveDiagnosis } from './utils/diagnosisStorage';
+import { generateProfessionalDiagnosis, calculateBazi, analyzeFiveElementsStrength } from './utils/baziCalculator';
 import { hookModel, HookReward, generateVariableReward } from './utils/hookModel';
 import LanguageSwitch from './components/LanguageSwitch';
 import GlobalStats from './components/GlobalStats';
@@ -277,9 +278,47 @@ export default function App() {
   };
 
   const handleOnboardingComplete = (data: any) => {
+    console.log('handleOnboardingComplete - data:', data);
+    
+    const bazi = calculateBazi(data.birthYear, data.birthMonth, data.birthDay, data.birthHour);
+    console.log('handleOnboardingComplete - bazi:', bazi);
+    
+    const strength = analyzeFiveElementsStrength(bazi);
+    console.log('handleOnboardingComplete - strength:', strength);
+    
+    const professionalDiagnosis = generateProfessionalDiagnosis(bazi, strength, lang);
+    
+    console.log('handleOnboardingComplete - professionalDiagnosis:', professionalDiagnosis);
+    console.log('handleOnboardingComplete - professionalDiagnosis.bazi:', professionalDiagnosis.bazi);
+    
     const diagnosis = generateDiagnosis(data, lang);
-    saveDiagnosis(diagnosis);
-    setDiagnosis(diagnosis);
+    
+    console.log('handleOnboardingComplete - diagnosis:', diagnosis);
+    
+    const enhancedDiagnosis = {
+      ...diagnosis,
+      bazi: professionalDiagnosis.bazi,
+      strength: professionalDiagnosis.strength,
+      villainInfo: {
+        ...diagnosis.villainInfo,
+        ...professionalDiagnosis.villain
+      },
+      shoeInfo: {
+        ...diagnosis.shoeInfo,
+        ...professionalDiagnosis.shoe
+      },
+      optimalTime: {
+        ...diagnosis.optimalTime,
+        ...professionalDiagnosis.optimalTime
+      },
+      villainDirection: professionalDiagnosis.villainDirection.direction,
+      psychologicalEffect: professionalDiagnosis.analysis
+    };
+    
+    console.log('handleOnboardingComplete - enhancedDiagnosis:', enhancedDiagnosis);
+    
+    saveDiagnosis(enhancedDiagnosis);
+    setDiagnosis(enhancedDiagnosis);
     setStep(AppStep.INTRO);
   };
 

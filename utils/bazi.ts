@@ -27,9 +27,20 @@ export interface OptimalTime {
 }
 
 import { ReliefStrategy, StressPattern, analyzeStressPattern, generateReliefStrategy } from './reliefStrategy';
+import { Bazi as ProfessionalBazi, FiveElementsStrength } from './baziCalculator';
+
+export interface Bazi {
+  year: number;
+  heavenlyStem: string;
+  earthlyBranch: string;
+  element: 'wood' | 'fire' | 'earth' | 'metal' | 'water';
+  elementName: string;
+  elementColor: string;
+}
 
 export interface Diagnosis {
-  bazi: Bazi;
+  bazi: Bazi | ProfessionalBazi;
+  strength?: FiveElementsStrength;
   villainInfo: VillainInfo;
   villainDirection: string;
   shoeInfo: ShoeInfo;
@@ -154,7 +165,12 @@ export function generateDiagnosis(
   data: any,
   lang: 'zh' | 'en' = 'zh'
 ): Diagnosis {
-  const bazi = calculateBazi(data.age + 2000 - 25);
+  const year = data.birthYear || (data.age + 2000 - 25);
+  const month = data.birthMonth || 6;
+  const day = data.birthDay || 15;
+  const hour = data.birthHour || 12;
+  
+  const bazi = calculateBazi(year, month, day, hour);
   
   const elementOrder: ('wood' | 'fire' | 'earth' | 'metal' | 'water')[] = 
     ['wood', 'fire', 'earth', 'metal', 'water'];

@@ -2,8 +2,11 @@ import React, { useState } from 'react';
 import { Language } from '../types';
 import { TRANSLATIONS } from '../constants';
 
-interface OnboardingData {
-  age: number;
+export interface OnboardingData {
+  birthYear: number;
+  birthMonth: number;
+  birthDay: number;
+  birthHour: number;
   gender: string;
   stressTypes: string[];
   sleepPattern: string;
@@ -20,7 +23,10 @@ interface Props {
 const Onboarding: React.FC<Props> = ({ onComplete, onSkip, lang }) => {
   const [step, setStep] = useState(1);
   const [data, setData] = useState<OnboardingData>({
-    age: 25,
+    birthYear: 1995,
+    birthMonth: 6,
+    birthDay: 15,
+    birthHour: 12,
     gender: 'male',
     stressTypes: [],
     sleepPattern: 'normal',
@@ -60,36 +66,93 @@ const Onboarding: React.FC<Props> = ({ onComplete, onSkip, lang }) => {
       <h2 className="text-2xl font-bold text-amber-400">{t.step1Title}</h2>
       <p className="text-slate-300">{t.step1Desc}</p>
       
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700">
-          <label className="block text-sm text-slate-400 mb-3">{t.age}</label>
-          <input
-            type="number"
-            min="18"
-            max="80"
-            value={data.age}
-            onChange={(e) => setData({ ...data, age: parseInt(e.target.value) || 18 })}
-            className="w-full bg-slate-700 text-white rounded-lg px-4 py-3 border border-slate-600 focus:border-amber-500 focus:outline-none"
-          />
-        </div>
-        
-        <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700">
-          <label className="block text-sm text-slate-400 mb-3">{t.gender}</label>
-          <div className="grid grid-cols-3 gap-2">
-            {['male', 'female', 'other'].map(gender => (
-              <button
-                key={gender}
-                onClick={() => setData({ ...data, gender })}
-                className={`py-3 rounded-lg border-2 transition-all ${
-                  data.gender === gender
-                    ? 'border-amber-500 bg-amber-500/20 text-amber-400'
-                    : 'border-slate-600 bg-slate-800/50 text-slate-400 hover:border-slate-500'
-                }`}
-              >
-                {t[gender as keyof typeof t]}
-              </button>
-            ))}
+      <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700">
+        <label className="block text-sm text-slate-400 mb-3">
+          {lang === 'zh' ? '出生日期' : 'Birth Date'}
+        </label>
+        <div className="grid grid-cols-3 gap-3">
+          <div>
+            <label className="block text-xs text-slate-500 mb-2">
+              {lang === 'zh' ? '年' : 'Year'}
+            </label>
+            <input
+              type="number"
+              min="1950"
+              max="2010"
+              value={data.birthYear}
+              onChange={(e) => setData({ ...data, birthYear: parseInt(e.target.value) || 1995 })}
+              className="w-full bg-slate-700 text-white rounded-lg px-4 py-3 border border-slate-600 focus:border-amber-500 focus:outline-none"
+            />
           </div>
+          <div>
+            <label className="block text-xs text-slate-500 mb-2">
+              {lang === 'zh' ? '月' : 'Month'}
+            </label>
+            <input
+              type="number"
+              min="1"
+              max="12"
+              value={data.birthMonth}
+              onChange={(e) => setData({ ...data, birthMonth: parseInt(e.target.value) || 1 })}
+              className="w-full bg-slate-700 text-white rounded-lg px-4 py-3 border border-slate-600 focus:border-amber-500 focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-xs text-slate-500 mb-2">
+              {lang === 'zh' ? '日' : 'Day'}
+            </label>
+            <input
+              type="number"
+              min="1"
+              max="31"
+              value={data.birthDay}
+              onChange={(e) => setData({ ...data, birthDay: parseInt(e.target.value) || 1 })}
+              className="w-full bg-slate-700 text-white rounded-lg px-4 py-3 border border-slate-600 focus:border-amber-500 focus:outline-none"
+            />
+          </div>
+        </div>
+      </div>
+      
+      <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700">
+        <label className="block text-sm text-slate-400 mb-3">
+          {lang === 'zh' ? '出生时辰' : 'Birth Hour'}
+        </label>
+        <div className="grid grid-cols-4 gap-2">
+          {[0, 3, 6, 9, 12, 15, 18, 21].map(hour => (
+            <button
+              key={hour}
+              onClick={() => setData({ ...data, birthHour: hour })}
+              className={`py-3 rounded-lg border-2 transition-all ${
+                data.birthHour === hour
+                  ? 'border-amber-500 bg-amber-500/20 text-amber-400'
+                  : 'border-slate-600 bg-slate-800/50 text-slate-400 hover:border-slate-500'
+              }`}
+            >
+              {hour}:00
+            </button>
+          ))}
+        </div>
+        <p className="text-xs text-slate-500 mt-2">
+          {lang === 'zh' ? '选择大致出生时段即可' : 'Select approximate birth time period'}
+        </p>
+      </div>
+      
+      <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700">
+        <label className="block text-sm text-slate-400 mb-3">{t.gender}</label>
+        <div className="grid grid-cols-3 gap-2">
+          {['male', 'female', 'other'].map(gender => (
+            <button
+              key={gender}
+              onClick={() => setData({ ...data, gender })}
+              className={`py-3 rounded-lg border-2 transition-all ${
+                data.gender === gender
+                  ? 'border-amber-500 bg-amber-500/20 text-amber-400'
+                  : 'border-slate-600 bg-slate-800/50 text-slate-400 hover:border-slate-500'
+              }`}
+            >
+              {t[gender as keyof typeof t]}
+            </button>
+          ))}
         </div>
       </div>
     </div>
