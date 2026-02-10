@@ -328,7 +328,46 @@ export default function App() {
   };
 
   const handleStartRitual = () => {
-    setStep(AppStep.INTRO);
+    console.log('handleStartRitual - starting ritual');
+    console.log('handleStartRitual - diagnosis:', diagnosis);
+    
+    if (!diagnosis) {
+      console.error('handleStartRitual - diagnosis is null');
+      return;
+    }
+    
+    const villainData: VillainData = {
+      name: diagnosis.villainInfo.name,
+      type: VillainType.GENERAL_ANXIETY,
+      reason: diagnosis.villainInfo.characteristics.join(', ')
+    };
+    
+    console.log('handleStartRitual - setting villain:', villainData);
+    setVillain(villainData);
+    
+    const chantData: ChantResponse = {
+      chantLines: lang === 'zh' 
+        ? [
+            `定小人！${diagnosis.villainInfo.name}`,
+            `一打${diagnosis.villainInfo.element}型小人，霉运不再留`,
+            `二打${diagnosis.villainInfo.element}型小人，贵人身边走`,
+            `三打${diagnosis.villainInfo.element}型小人，转运要翻身`
+          ]
+        : [
+            `Smash the ${diagnosis.villainInfo.name}!`,
+            `Banish the bad luck now`,
+            `Clear the path for good`,
+            `Strike with all your might`
+          ],
+      ritualInstruction: lang === 'zh' 
+        ? `使用${diagnosis.shoeInfo.name}，从${diagnosis.villainDirection}方向打小人！`
+        : `Use ${diagnosis.shoeInfo.name} to smash from ${diagnosis.villainDirection} direction!`
+    };
+    
+    console.log('handleStartRitual - setting chant:', chantData);
+    setChant(chantData);
+    
+    setStep(AppStep.RITUAL);
   };
 
   const renderBackground = () => (
