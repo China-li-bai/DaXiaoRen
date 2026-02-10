@@ -29,6 +29,7 @@ export default class VillainSmashServer implements Party.Server {
       metadata = {
         version: LEADERBOARD_VERSION,
         lastReset: Date.now(),
+        lastUpdated: Date.now(),
         totalGlobalClicks: 0,
         createdAt: Date.now()
       };
@@ -47,7 +48,8 @@ export default class VillainSmashServer implements Party.Server {
     
     this.leaderboardMetadata = {
       ...this.leaderboardMetadata,
-      ...updates
+      ...updates,
+      lastUpdated: Date.now() // Always update the lastUpdated timestamp
     };
     
     await this.party.storage.put("lb_metadata", this.leaderboardMetadata);

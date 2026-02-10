@@ -105,7 +105,7 @@ const LeaderboardWidget: React.FC<Props> = ({ clicksToAdd, onClicksSent, isOpen,
              {metadata && (
                <div className="text-xs text-slate-400 mt-1">
                  <span>🌍 Total: {metadata.totalGlobalClicks.toLocaleString()}</span>
-                 <span className="ml-2">📅 Reset: {new Date(metadata.lastReset).toLocaleDateString()}</span>
+                 <span className="ml-2">📅 Updated: {new Date(metadata.lastUpdated).toLocaleDateString()}</span>
                </div>
              )}
            </div>

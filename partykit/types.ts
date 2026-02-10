@@ -39,6 +39,7 @@ export type GlobalLeaderboardState = {
 export type LeaderboardMetadata = {
   version: string; // Data structure version
   lastReset: number; // Timestamp of last data reset
+  lastUpdated: number; // Timestamp of last data update
   totalGlobalClicks: number; // Total clicks across all countries
   createdAt: number; // When the leaderboard was created
 };
