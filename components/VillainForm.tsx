@@ -12,7 +12,7 @@ interface Props {
 
 const VillainForm: React.FC<Props> = ({ lang, onSubmit }) => {
   const t = TRANSLATIONS[lang];
-  const [mode, setMode] = useState<'MANUAL' | 'SEARCH'>('SEARCH');
+  const [mode, setMode] = useState<'CONCEPTUAL' | 'SEARCH' | 'MANUAL'>('CONCEPTUAL');
   
   const [searchQuery, setSearchQuery] = useState('');
   const [isSearching, setIsSearching] = useState(false);
@@ -73,6 +73,14 @@ const VillainForm: React.FC<Props> = ({ lang, onSubmit }) => {
     <div className="w-full max-w-md bg-slate-800/80 backdrop-blur-sm p-6 rounded-xl border border-amber-600/30 shadow-2xl animate-fade-in-up">
       <div className="flex mb-6 border-b border-slate-700">
         <button
+          onClick={() => setMode('CONCEPTUAL')}
+          className={`flex-1 pb-2 text-sm font-bold uppercase tracking-wider transition-colors ${
+            mode === 'CONCEPTUAL' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-400 hover:text-slate-200'
+          }`}
+        >
+          {lang === 'en' ? 'Quick Pick' : '快速选择'}
+        </button>
+        <button
           onClick={() => setMode('SEARCH')}
           className={`flex-1 pb-2 text-sm font-bold uppercase tracking-wider transition-colors ${
             mode === 'SEARCH' ? 'text-amber-500 border-b-2 border-amber-500' : 'text-slate-400 hover:text-slate-200'
@@ -90,12 +98,60 @@ const VillainForm: React.FC<Props> = ({ lang, onSubmit }) => {
         </button>
       </div>
 
+      {/* Conceptual Villain Mode */}
+      {mode === 'CONCEPTUAL' && (
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-slate-300 mb-3 text-sm font-semibold">
+              {lang === 'en' ? 'What\'s bothering you?' : '什么在困扰你？'}
+            </label>
+            <div className="grid grid-cols-2 gap-2">
+              {Object.entries(t.conceptualVillains).map(([key, label]) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => {
+                    setName(label);
+                    setType(VillainType.GENERAL_ANXIETY);
+                    setReason(lang === 'en' ? `I'm stressed about ${label}` : `我因为${label}而焦虑`);
+                  }}
+                  className={`p-3 rounded-lg border-2 transition-all transform hover:scale-105 active:scale-95 ${
+                    name === label
+                      ? 'bg-amber-600/20 border-amber-500 text-amber-400'
+                      : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-amber-500/50'
+                  }`}
+                >
+                  <div className="text-2xl mb-1">
+                    {key === 'monday' && '😫'}
+                    {key === 'overtime' && '🕰️'}
+                    {key === 'clientPie' && '🥧'}
+                    {key === 'talkOnly' && '🗣️'}
+                    {key === 'badLuck' && '💔'}
+                    {key === 'procrastination' && '😴'}
+                    {key === 'micromanagement' && '👁️'}
+                    {key === 'gaslighting' && '🤥�'}
+                    {key === 'ghosting' && '👻'}
+                    {key === 'cancel' && '❌'}
+                  </div>
+                  <div className="text-xs font-medium">{label}</div>
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-slate-500 mt-2 text-center">
+              {t.conceptualVillainDesc}
+            </p>
+          </div>
+        </form>
+      )}
+
       {/* Content Warning Banner */}
-      <div className="mb-4 bg-amber-900/30 border border-amber-600/50 p-3 rounded text-xs text-amber-200">
-          {lang === 'en' 
-            ? "⚠️ IMPORTANT: Enter fictional names only! This is a game - do NOT enter real people's names. Violations may result in account termination." 
-            : "⚠️ 重要提示：请勿输入真实人名！这只是虚拟游戏，禁止输入任何真实姓名。违规将可能导致账号被封禁。"}
-      </div>
+      {mode !== 'CONCEPTUAL' && (
+        <div className="mb-4 bg-amber-900/30 border border-amber-600/50 p-3 rounded text-xs text-amber-200">
+            {lang === 'en' 
+              ? "⚠️ IMPORTANT: Enter fictional names only! This is a game - do NOT enter real people's names. Violations may result in account termination." 
+              : "⚠️ 重要提示：请勿输入真实人名！这只是虚拟游戏，禁止输入任何真实姓名。违规将可能导致账号被封禁。"}
+        </div>
+      )}
 
       {mode === 'SEARCH' ? (
          <form onSubmit={handleSearch} className="space-y-4">

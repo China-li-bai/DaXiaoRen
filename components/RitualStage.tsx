@@ -6,6 +6,7 @@ import Villain from './Villain';
 import Shoe from './Shoe';
 import { getPartyKitHost } from '../config/partykit';
 import { useSpeechSynthesis } from '../hooks/useSpeechSynthesis';
+import { hookModel, generateVariableReward } from '../utils/hookModel';
 
 interface Props {
   lang: Language;
@@ -302,6 +303,11 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
     const newHits = hits + 1;
     setHits(newHits);
 
+    // Hook Model: Variable Reward
+    const baseReward = 10;
+    const variableReward = generateVariableReward(baseReward);
+    hookModel.reward('variable', lang === 'zh' ? '压力释放' : 'Stress Released', variableReward, '💥');
+
     // Auto-play all chants on first hit
     if (hits === 0) {
       speakAllChants();
@@ -326,6 +332,12 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
 
     if (newHits >= TOTAL_HITS_REQUIRED && !isComplete) {
       setIsComplete(true);
+      
+      // Hook Model: Investment (Time)
+      hookModel.invest('time', TOTAL_HITS_REQUIRED, lang === 'zh' ? '完成仪式' : 'Completed ritual');
+      
+      // Hook Model: Self Reward
+      hookModel.reward('self', lang === 'zh' ? '仪式完成' : 'Ritual Complete', 100, '🎉');
       
       // Send COMPLETION message to PartyKit
       gameSocket.send(JSON.stringify({

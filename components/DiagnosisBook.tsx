@@ -30,20 +30,20 @@ const DiagnosisBook: React.FC<Props> = ({ diagnosis, onStart, onRetry, lang }) =
             </h2>
             <div className="space-y-2">
               <div className="flex items-center gap-3">
-                <span className="text-4xl">{getElementIcon(diagnosis.user.element)}</span>
+                <span className="text-4xl">{getElementIcon(diagnosis.bazi.element)}</span>
                 <div>
-                  <p className="text-xl font-bold text-slate-200">{t.elements[diagnosis.user.element]}命</p>
-                  <p className="text-sm text-slate-400">{t.birthYear}: {diagnosis.user.year}</p>
+                  <p className="text-xl font-bold text-slate-200">{t.elements[diagnosis.bazi.element]}</p>
+                  <p className="text-sm text-slate-400">{t.birthYear}: {diagnosis.bazi.year}</p>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div className="bg-slate-800 rounded p-2">
                   <span className="text-slate-500">{t.heavenlyStem}：</span>
-                  <span className="text-amber-500 font-bold">{diagnosis.user.heavenlyStem}</span>
+                  <span className="text-amber-500 font-bold">{diagnosis.bazi.heavenlyStem}</span>
                 </div>
                 <div className="bg-slate-800 rounded p-2">
                   <span className="text-slate-500">{t.earthlyBranch}：</span>
-                  <span className="text-amber-500 font-bold">{diagnosis.user.earthlyBranch}</span>
+                  <span className="text-amber-500 font-bold">{diagnosis.bazi.earthlyBranch}</span>
                 </div>
               </div>
             </div>
@@ -57,12 +57,9 @@ const DiagnosisBook: React.FC<Props> = ({ diagnosis, onStart, onRetry, lang }) =
             <div className="space-y-2">
               <div className="bg-red-900/30 rounded p-3 border border-red-600">
                 <p className="text-red-400 font-bold text-center text-lg">
-                  {diagnosis.situation.conflict}
+                  {diagnosis.isAdvantageous ? t.conflict : '压力模式分析'}
                 </p>
               </div>
-              <p className="text-slate-300 text-sm leading-relaxed">
-                {diagnosis.situation.description}
-              </p>
             </div>
           </section>
 
@@ -74,9 +71,9 @@ const DiagnosisBook: React.FC<Props> = ({ diagnosis, onStart, onRetry, lang }) =
             <div className="flex items-center gap-3">
               <div className="text-4xl">🧭</div>
               <div>
-                <p className="text-xl font-bold text-slate-200">{diagnosis.villain.direction}</p>
+                <p className="text-xl font-bold text-slate-200">{diagnosis.villainDirection}</p>
                 <p className="text-sm text-slate-400">
-                  {getElementIcon(diagnosis.villain.element)}位
+                  {getElementIcon(diagnosis.villainInfo.element)}位
                 </p>
               </div>
             </div>
@@ -89,16 +86,16 @@ const DiagnosisBook: React.FC<Props> = ({ diagnosis, onStart, onRetry, lang }) =
             </h2>
             <div className="space-y-2">
               <div className="flex items-center gap-3">
-                <span className="text-4xl">{getElementIcon(diagnosis.villain.element)}</span>
+                <span className="text-4xl">{getElementIcon(diagnosis.villainInfo.element)}</span>
                 <div>
-                  <p className="text-xl font-bold text-slate-200">{diagnosis.villain.type}</p>
+                  <p className="text-xl font-bold text-slate-200">{diagnosis.villainInfo.name}</p>
                   <p className="text-sm text-slate-400">
-                    {getElementName(diagnosis.villain.element)}形小人
+                    {getElementName(diagnosis.villainInfo.element)}型
                   </p>
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
-                {diagnosis.villain.characteristics.map((char, index) => (
+                {diagnosis.villainInfo.characteristics.map((char, index) => (
                   <span
                     key={index}
                     className="bg-slate-800 text-slate-300 text-xs px-2 py-1 rounded"
@@ -117,17 +114,17 @@ const DiagnosisBook: React.FC<Props> = ({ diagnosis, onStart, onRetry, lang }) =
             </h2>
             <div className="space-y-3">
               <div className="flex items-center gap-3 bg-green-900/20 rounded p-3 border border-green-600">
-                <span className="text-4xl">{diagnosis.solution.shoeIcon}</span>
+                <span className="text-4xl">{diagnosis.shoeInfo.icon}</span>
                 <div>
-                  <p className="text-xl font-bold text-green-400">{diagnosis.solution.shoeType}</p>
+                  <p className="text-xl font-bold text-green-400">{diagnosis.shoeInfo.name}</p>
                   <p className="text-sm text-slate-400">{t.shoeType}</p>
                 </div>
               </div>
               <div className="flex items-center gap-3 bg-amber-900/20 rounded p-3 border border-amber-600">
                 <span className="text-4xl">⏰</span>
                 <div>
-                  <p className="text-xl font-bold text-amber-400">{diagnosis.solution.optimalTime}</p>
-                  <p className="text-sm text-slate-400">{t.optimalTime}: {diagnosis.solution.timeRange}</p>
+                  <p className="text-xl font-bold text-amber-400">{diagnosis.optimalTime.name}</p>
+                  <p className="text-sm text-slate-400">{t.optimalTime}: {diagnosis.optimalTime.range}</p>
                 </div>
               </div>
             </div>

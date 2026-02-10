@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
 import { Language } from '../types';
 import { TRANSLATIONS } from '../constants';
-import { troubles } from '../utils/bazi';
 
 interface OnboardingData {
-  birthYear: number;
-  bedDirection: string;
-  doorDirection: string;
-  currentTroubles: string[];
+  age: number;
+  gender: string;
+  stressTypes: string[];
+  sleepPattern: string;
+  exercise: string;
+  socialActivity: string;
 }
 
 interface Props {
@@ -16,24 +17,15 @@ interface Props {
   lang: Language;
 }
 
-const directions = [
-  { id: 'north', labelKey: 'north', icon: '⬆️' },
-  { id: 'south', labelKey: 'south', icon: '⬇️' },
-  { id: 'east', labelKey: 'east', icon: '➡️' },
-  { id: 'west', labelKey: 'west', icon: '⬅️' },
-  { id: 'northeast', labelKey: 'northeast', icon: '↗️' },
-  { id: 'southeast', labelKey: 'southeast', icon: '↘️' },
-  { id: 'northwest', labelKey: 'northwest', icon: '↖️' },
-  { id: 'southwest', labelKey: 'southwest', icon: '↙️' }
-];
-
 const Onboarding: React.FC<Props> = ({ onComplete, onSkip, lang }) => {
   const [step, setStep] = useState(1);
   const [data, setData] = useState<OnboardingData>({
-    birthYear: new Date().getFullYear() - 25,
-    bedDirection: 'south',
-    doorDirection: 'south',
-    currentTroubles: []
+    age: 25,
+    gender: 'male',
+    stressTypes: [],
+    sleepPattern: 'normal',
+    exercise: 'moderate',
+    socialActivity: 'moderate'
   });
 
   const t = TRANSLATIONS[lang];
@@ -54,12 +46,12 @@ const Onboarding: React.FC<Props> = ({ onComplete, onSkip, lang }) => {
     onComplete(data);
   };
 
-  const toggleTrouble = (troubleId: string) => {
+  const toggleStressType = (type: string) => {
     setData(prev => ({
       ...prev,
-      currentTroubles: prev.currentTroubles.includes(troubleId)
-        ? prev.currentTroubles.filter(id => id !== troubleId)
-        : [...prev.currentTroubles, troubleId]
+      stressTypes: prev.stressTypes.includes(type)
+        ? prev.stressTypes.filter(t => t !== type)
+        : [...prev.stressTypes, type]
     }));
   };
 
@@ -68,22 +60,37 @@ const Onboarding: React.FC<Props> = ({ onComplete, onSkip, lang }) => {
       <h2 className="text-2xl font-bold text-amber-400">{t.step1Title}</h2>
       <p className="text-slate-300">{t.step1Desc}</p>
       
-      <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700">
-        <label className="block text-sm text-slate-400 mb-3">{t.birthYear}</label>
-        <select
-          value={data.birthYear}
-          onChange={(e) => setData({ ...data, birthYear: parseInt(e.target.value) })}
-          className="w-full bg-slate-700 text-white rounded-lg px-4 py-3 border border-slate-600 focus:border-amber-500 focus:outline-none"
-        >
-          {Array.from({ length: 80 }, (_, i) => {
-            const year = 1940 + i;
-            return (
-              <option key={year} value={year}>
-                {year}
-              </option>
-            );
-          })}
-        </select>
+      <div className="grid grid-cols-2 gap-4">
+        <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700">
+          <label className="block text-sm text-slate-400 mb-3">{t.age}</label>
+          <input
+            type="number"
+            min="18"
+            max="80"
+            value={data.age}
+            onChange={(e) => setData({ ...data, age: parseInt(e.target.value) || 18 })}
+            className="w-full bg-slate-700 text-white rounded-lg px-4 py-3 border border-slate-600 focus:border-amber-500 focus:outline-none"
+          />
+        </div>
+        
+        <div className="bg-slate-800/50 rounded-lg p-6 border border-slate-700">
+          <label className="block text-sm text-slate-400 mb-3">{t.gender}</label>
+          <div className="grid grid-cols-3 gap-2">
+            {['male', 'female', 'other'].map(gender => (
+              <button
+                key={gender}
+                onClick={() => setData({ ...data, gender })}
+                className={`py-3 rounded-lg border-2 transition-all ${
+                  data.gender === gender
+                    ? 'border-amber-500 bg-amber-500/20 text-amber-400'
+                    : 'border-slate-600 bg-slate-800/50 text-slate-400 hover:border-slate-500'
+                }`}
+              >
+                {t[gender as keyof typeof t]}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -93,19 +100,28 @@ const Onboarding: React.FC<Props> = ({ onComplete, onSkip, lang }) => {
       <h2 className="text-2xl font-bold text-amber-400">{t.step2Title}</h2>
       <p className="text-slate-300">{t.step2Desc}</p>
       
-      <div className="grid grid-cols-4 gap-3">
-        {directions.map((dir) => (
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {Object.entries(t.stressTypes).map(([key, value]) => (
           <button
-            key={dir.id}
-            onClick={() => setData({ ...data, bedDirection: dir.id })}
+            key={key}
+            onClick={() => toggleStressType(key)}
             className={`p-4 rounded-lg border-2 transition-all ${
-              data.bedDirection === dir.id
+              data.stressTypes.includes(key)
                 ? 'border-amber-500 bg-amber-500/20 text-amber-400'
                 : 'border-slate-600 bg-slate-800/50 text-slate-400 hover:border-slate-500'
             }`}
           >
-            <div className="text-2xl mb-1">{dir.icon}</div>
-            <div className="text-xs">{t.directions[dir.labelKey as keyof typeof t.directions]}</div>
+            <div className="text-2xl mb-1">
+              {key === 'work' && '💼'}
+              {key === 'relationship' && '💔'}
+              {key === 'health' && '🤒'}
+              {key === 'finance' && '💰'}
+              {key === 'study' && '📚'}
+              {key === 'anxiety' && '😰'}
+              {key === 'insomnia' && '😴'}
+              {key === 'anger' && '😡'}
+            </div>
+            <div className="text-xs">{value}</div>
           </button>
         ))}
       </div>
@@ -117,21 +133,63 @@ const Onboarding: React.FC<Props> = ({ onComplete, onSkip, lang }) => {
       <h2 className="text-2xl font-bold text-amber-400">{t.step3Title}</h2>
       <p className="text-slate-300">{t.step3Desc}</p>
       
-      <div className="grid grid-cols-4 gap-3">
-        {directions.map((dir) => (
-          <button
-            key={dir.id}
-            onClick={() => setData({ ...data, doorDirection: dir.id })}
-            className={`p-4 rounded-lg border-2 transition-all ${
-              data.doorDirection === dir.id
-                ? 'border-amber-500 bg-amber-500/20 text-amber-400'
-                : 'border-slate-600 bg-slate-800/50 text-slate-400 hover:border-slate-500'
-            }`}
-          >
-            <div className="text-2xl mb-1">{dir.icon}</div>
-            <div className="text-xs">{t.directions[dir.labelKey as keyof typeof t.directions]}</div>
-          </button>
-        ))}
+      <div className="space-y-4">
+        <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+          <label className="block text-sm text-slate-400 mb-3">{t.sleepPattern}</label>
+          <div className="grid grid-cols-3 gap-2">
+            {Object.entries(t.sleepPatterns).map(([key, value]) => (
+              <button
+                key={key}
+                onClick={() => setData({ ...data, sleepPattern: key })}
+                className={`py-3 rounded-lg border-2 transition-all ${
+                  data.sleepPattern === key
+                    ? 'border-amber-500 bg-amber-500/20 text-amber-400'
+                    : 'border-slate-600 bg-slate-800/50 text-slate-400 hover:border-slate-500'
+                }`}
+              >
+                <div className="text-sm">{value}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+        
+        <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+          <label className="block text-sm text-slate-400 mb-3">{t.exercise}</label>
+          <div className="grid grid-cols-4 gap-2">
+            {Object.entries(t.exerciseLevels).map(([key, value]) => (
+              <button
+                key={key}
+                onClick={() => setData({ ...data, exercise: key })}
+                className={`py-3 rounded-lg border-2 transition-all ${
+                  data.exercise === key
+                    ? 'border-amber-500 bg-amber-500/20 text-amber-400'
+                    : 'border-slate-600 bg-slate-800/50 text-slate-400 hover:border-slate-500'
+                }`}
+              >
+                <div className="text-xs">{value}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+        
+        <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
+          <label className="block text-sm text-slate-400 mb-3">{t.socialActivity}</label>
+          <div className="grid grid-cols-3 gap-2">
+            {Object.entries(t.socialLevels).map(([key, value]) => (
+              <button
+                key={key}
+                onClick={() => setData({ ...data, socialActivity: key })}
+                className={`py-3 rounded-lg border-2 transition-all ${
+                  data.socialActivity === key
+                    ? 'border-amber-500 bg-amber-500/20 text-amber-400'
+                    : 'border-slate-600 bg-slate-800/50 text-slate-400 hover:border-slate-500'
+                }`}
+              >
+                <div className="text-sm">{value}</div>
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -141,21 +199,27 @@ const Onboarding: React.FC<Props> = ({ onComplete, onSkip, lang }) => {
       <h2 className="text-2xl font-bold text-amber-400">{t.step4Title}</h2>
       <p className="text-slate-300">{t.step4Desc}</p>
       
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        {troubles.map((trouble) => (
-          <button
-            key={trouble.id}
-            onClick={() => toggleTrouble(trouble.id)}
-            className={`p-4 rounded-lg border-2 transition-all ${
-              data.currentTroubles.includes(trouble.id)
-                ? 'border-amber-500 bg-amber-500/20 text-amber-400'
-                : 'border-slate-600 bg-slate-800/50 text-slate-400 hover:border-slate-500'
-            }`}
-          >
-            <div className="text-2xl mb-1">{trouble.icon}</div>
-            <div className="text-xs">{t.troubles[trouble.id as keyof typeof t.troubles]}</div>
-          </button>
-        ))}
+      <div className="bg-gradient-to-br from-amber-900/30 to-red-900/30 rounded-lg p-6 border-2 border-amber-500">
+        <div className="text-center space-y-4">
+          <div className="text-6xl mb-4">🎯</div>
+          <h3 className="text-xl font-bold text-amber-400 mb-2">
+            {lang === 'zh' ? '你的个性化策略已生成' : 'Your personalized strategy is ready'}
+          </h3>
+          <div className="space-y-2 text-sm text-slate-300">
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-2xl">📊</span>
+              <span>{lang === 'zh' ? '基于行为心理学分析' : 'Based on behavioral psychology analysis'}</span>
+            </div>
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-2xl">🧠</span>
+              <span>{lang === 'zh' ? '个性化压力缓解方案' : 'Personalized stress relief plan'}</span>
+            </div>
+            <div className="flex items-center justify-center gap-2">
+              <span className="text-2xl">⚡</span>
+              <span>{lang === 'zh' ? '即时反馈系统' : 'Instant feedback system'}</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -175,7 +239,7 @@ const Onboarding: React.FC<Props> = ({ onComplete, onSkip, lang }) => {
           {[1, 2, 3, 4].map((s) => (
             <div
               key={s}
-              className={`h-1 flex-1 mx-1 rounded ${
+              className={`h-1 flex-1 mx-1 rounded transition-all ${
                 s <= step ? 'bg-amber-500' : 'bg-slate-700'
               }`}
             />

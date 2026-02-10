@@ -3,12 +3,17 @@ import { AppStep, Language, VillainData, ChantResponse, ResolutionResponse, Vill
 import { TRANSLATIONS, PAYMENT_CONFIG } from './constants';
 import { generateRitualChant, generateResolution } from './services/workerService';
 import { getLocalRecords, saveLocalRecord, deleteLocalRecord } from './services/storageService';
+import { Diagnosis, generateDiagnosis } from './utils/bazi';
+import { hookModel, HookReward, generateVariableReward } from './utils/hookModel';
 import LanguageSwitch from './components/LanguageSwitch';
 import GlobalStats from './components/GlobalStats';
 import LeaderboardWidget from './components/LeaderboardWidget';
 import HeritageBadge from './components/HeritageBadge';
 import Onboarding from './components/Onboarding';
 import DiagnosisBook from './components/DiagnosisBook';
+import HookRewardDisplay from './components/HookRewardDisplay';
+import DailyChallenge from './components/DailyChallenge';
+import TalismanSystem, { dropRandomTalisman } from './components/TalismanSystem';
 
 const VillainForm = lazy(() => import('./components/VillainForm'));
 const RitualStage = lazy(() => import('./components/RitualStage'));
@@ -74,7 +79,7 @@ export default function App() {
   const [pendingLeaderboardClicks, setPendingLeaderboardClicks] = useState(0);
   
   // Onboarding System
-  const [diagnosis, setDiagnosis] = useState<any>(null);
+  const [diagnosis, setDiagnosis] = useState<Diagnosis | null>(null);
   
   // Room ID for PartyKit
   const [roomId, setRoomId] = useState<string | null>(null);
@@ -87,6 +92,11 @@ export default function App() {
       setCredits(parseInt(savedCredits, 10));
     }
     setRecords(getLocalRecords());
+
+    // Hook Model: Initial trigger
+    hookModel.trigger('internal', lang === 'zh' ? '开始压力释放之旅' : 'Start your stress relief journey', () => {
+      setStep(AppStep.ONBOARDING);
+    }, 'high');
 
     // Check for "Assist Mode" params
     const params = new URLSearchParams(window.location.search);
@@ -152,6 +162,9 @@ export default function App() {
         setShowPayment(true);
         return;
     }
+
+    // Hook Model: Investment (Data)
+    hookModel.invest('data', 1, lang === 'zh' ? '提交小人信息' : 'Submitted villain info');
 
     setVillain(data);
     setStep(AppStep.PREPARING);
@@ -239,6 +252,11 @@ export default function App() {
       } else {
         // In normal mode, call the API
         res = await generateResolution(villain, lang);
+        
+        // Drop random talisman (30% chance)
+        if (Math.random() < 0.3) {
+          dropRandomTalisman(lang);
+        }
       }
       
       setResolution(res);
@@ -258,14 +276,7 @@ export default function App() {
   };
 
   const handleOnboardingComplete = (data: any) => {
-    const { generateDiagnosis } = require('./utils/bazi');
-    const diagnosis = generateDiagnosis(
-      data.birthYear,
-      data.bedDirection,
-      data.doorDirection,
-      data.currentTroubles,
-      lang
-    );
+    const diagnosis = generateDiagnosis(data, lang);
     setDiagnosis(diagnosis);
     setStep(AppStep.INTRO);
   };
@@ -455,6 +466,15 @@ export default function App() {
           />
         )}
       </main>
+
+      {/* Hook Reward Display */}
+      <HookRewardDisplay lang={lang} />
+
+      {/* Talisman System */}
+      <TalismanSystem lang={lang} />
+
+      {/* Daily Challenge */}
+      <DailyChallenge lang={lang} />
 
       {/* Payment Modal */}
       {showPayment && (
