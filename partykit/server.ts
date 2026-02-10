@@ -271,6 +271,14 @@ export default class VillainSmashServer implements Party.Server {
           await this.updateLeaderboardMetadata({
             totalGlobalClicks: totalGlobalClicks
           });
+        } else {
+          // If lbState already exists, always recalculate total to ensure accuracy
+          const metadata = await this.initializeLeaderboardMetadata();
+          const totalGlobalClicks = Object.values(lbState).reduce((sum, country) => sum + country.score, 0);
+          console.log('📊 Recalculating total global clicks:', totalGlobalClicks);
+          await this.updateLeaderboardMetadata({
+            totalGlobalClicks: totalGlobalClicks
+          });
         }
         
         const metadata = this.leaderboardMetadata;
@@ -339,11 +347,14 @@ export default class VillainSmashServer implements Party.Server {
                 countryData.regions[regionKey] += count;
 
                 await this.party.storage.put("lb_state", lbState);
+                
+                // Always recalculate total global clicks from all countries to ensure accuracy
+                const totalGlobalClicks = Object.values(lbState).reduce((sum, country) => sum + country.score, 0);
                 await this.updateLeaderboardMetadata({
-                    totalGlobalClicks: (this.leaderboardMetadata?.totalGlobalClicks || 0) + count
+                    totalGlobalClicks: totalGlobalClicks
                 });
 
-                console.log(`✅ Leaderboard updated: ${geo.country} +${count}, total: ${countryData.score}`);
+                console.log(`✅ Leaderboard updated: ${geo.country} +${count}, total: ${countryData.score}, global total: ${totalGlobalClicks}`);
 
                 this.pendingBroadcast = { type: 'LB_UPDATE', state: lbState, metadata: this.leaderboardMetadata };
                 

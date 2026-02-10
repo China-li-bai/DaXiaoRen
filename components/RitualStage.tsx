@@ -317,7 +317,6 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
     if (newHits % 20 === 0 && !leaderboardSent) {
       leaderboardSocket.send(JSON.stringify({
         type: 'LB_CLICK',
-        count: 20,
         villainName: villain.name,
         villainType: villain.type
       }));

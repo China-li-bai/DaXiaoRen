@@ -58,5 +58,5 @@ export type ServerMessage =
   | { type: 'USER_JOINED'; count: number }                     // Presence update
   | { type: 'USER_LEFT'; count: number }                       // Presence update
   | { type: 'EMOJI_BROADCAST'; emoji: string; x: number; y: number } // Visual effect
-  | { type: 'LB_UPDATE'; state: GlobalLeaderboardState }       // Leaderboard full update
+  | { type: 'LB_UPDATE'; state: GlobalLeaderboardState; metadata?: LeaderboardMetadata }       // Leaderboard full update
   | { type: 'COMPLETION'; totalHits: number };                 // Ritual completed
