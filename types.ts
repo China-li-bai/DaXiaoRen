@@ -22,12 +22,13 @@ export interface VillainRecord extends VillainData {
 }
 
 export enum AppStep {
+  ONBOARDING = 'ONBOARDING', // New step for bazi diagnosis
   INTRO = 'INTRO',
-  PAYMENT = 'PAYMENT', // New step for payment gate
+  PAYMENT = 'PAYMENT',
   INPUT = 'INPUT',
-  PREPARING = 'PREPARING', // Generating chant
-  RITUAL = 'RITUAL', // Hitting
-  RESOLVING = 'RESOLVING', // Generating closure
+  PREPARING = 'PREPARING',
+  RITUAL = 'RITUAL',
+  RESOLVING = 'RESOLVING',
   CONCLUSION = 'CONCLUSION'
 }
 

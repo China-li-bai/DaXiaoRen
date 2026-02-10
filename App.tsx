@@ -1,4 +1,4 @@
-import React, { useState, useEffect, lazy } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { AppStep, Language, VillainData, ChantResponse, ResolutionResponse, VillainRecord, VillainType } from './types';
 import { TRANSLATIONS, PAYMENT_CONFIG } from './constants';
 import { generateRitualChant, generateResolution } from './services/workerService';
@@ -7,6 +7,8 @@ import LanguageSwitch from './components/LanguageSwitch';
 import GlobalStats from './components/GlobalStats';
 import LeaderboardWidget from './components/LeaderboardWidget';
 import HeritageBadge from './components/HeritageBadge';
+import Onboarding from './components/Onboarding';
+import DiagnosisBook from './components/DiagnosisBook';
 
 const VillainForm = lazy(() => import('./components/VillainForm'));
 const RitualStage = lazy(() => import('./components/RitualStage'));
@@ -47,7 +49,7 @@ const LiveTicker: React.FC<{ lang: Language }> = ({ lang }) => {
 
 export default function App() {
   const [lang, setLang] = useState<Language>('zh');
-  const [step, setStep] = useState<AppStep>(AppStep.INTRO);
+  const [step, setStep] = useState<AppStep>(AppStep.ONBOARDING);
   const [hasAgreed, setHasAgreed] = useState(false);
   const [villain, setVillain] = useState<VillainData | null>(null);
   const [chant, setChant] = useState<ChantResponse | null>(null);
@@ -70,6 +72,9 @@ export default function App() {
   // Leaderboard State
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [pendingLeaderboardClicks, setPendingLeaderboardClicks] = useState(0);
+  
+  // Onboarding System
+  const [diagnosis, setDiagnosis] = useState<any>(null);
   
   // Room ID for PartyKit
   const [roomId, setRoomId] = useState<string | null>(null);
@@ -249,6 +254,28 @@ export default function App() {
     setChant(null);
     setResolution(null);
     setHasAgreed(false); 
+    setStep(AppStep.ONBOARDING);
+  };
+
+  const handleOnboardingComplete = (data: any) => {
+    const { generateDiagnosis } = require('./utils/bazi');
+    const diagnosis = generateDiagnosis(
+      data.birthYear,
+      data.bedDirection,
+      data.doorDirection,
+      data.currentTroubles,
+      lang
+    );
+    setDiagnosis(diagnosis);
+    setStep(AppStep.INTRO);
+  };
+
+  const handleRetryDiagnosis = () => {
+    setDiagnosis(null);
+    setStep(AppStep.ONBOARDING);
+  };
+
+  const handleStartRitual = () => {
     setStep(AppStep.INTRO);
   };
 
@@ -303,7 +330,27 @@ export default function App() {
       />
       <main className="z-10 w-full flex flex-col items-center justify-center flex-grow">
         
-        {step === AppStep.INTRO && (
+        {step === AppStep.ONBOARDING && (
+          <Onboarding 
+            onComplete={handleOnboardingComplete} 
+            onSkip={() => {
+              setDiagnosis(null);
+              setStep(AppStep.INTRO);
+            }}
+            lang={lang}
+          />
+        )}
+
+        {step === AppStep.INTRO && diagnosis && (
+          <DiagnosisBook 
+            diagnosis={diagnosis} 
+            onStart={handleStartRitual} 
+            onRetry={handleRetryDiagnosis}
+            lang={lang}
+          />
+        )}
+
+        {step === AppStep.INTRO && !diagnosis && (
           <div className="text-center animate-fade-in space-y-8 max-w-2xl px-4">
             <h1 className="text-4xl sm:text-5xl md:text-7xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-amber-500 drop-shadow-sm mb-2">
               {t.title}
