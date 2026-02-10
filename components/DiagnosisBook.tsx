@@ -49,19 +49,53 @@ const DiagnosisBook: React.FC<Props> = ({ diagnosis, onStart, onRetry, lang }) =
             </div>
           </section>
 
-          <section className="bg-slate-700/50 rounded-lg p-4 border border-slate-600">
-            <h2 className="text-red-500 font-bold mb-3 text-lg flex items-center gap-2">
-              <span>⚔️</span>
-              <span>{t.currentSituation}</span>
-            </h2>
-            <div className="space-y-2">
-              <div className="bg-red-900/30 rounded p-3 border border-red-600">
-                <p className="text-red-400 font-bold text-center text-lg">
-                  {diagnosis.isAdvantageous ? t.conflict : '压力模式分析'}
-                </p>
+          {diagnosis.stressPattern && (
+            <section className="bg-red-900/30 rounded-lg p-4 border border-red-600">
+              <h2 className="text-red-500 font-bold mb-3 text-lg flex items-center gap-2">
+                <span>⚠️</span>
+                <span>{lang === 'zh' ? '压力模式分析' : 'Stress Pattern Analysis'}</span>
+              </h2>
+              <div className="space-y-3">
+                <div className="bg-red-900/50 rounded p-3">
+                  <p className="text-red-400 font-bold text-center text-lg mb-2">
+                    {diagnosis.stressPattern.severity === 'severe' && (lang === 'zh' ? '严重压力' : 'Severe Stress')}
+                    {diagnosis.stressPattern.severity === 'moderate' && (lang === 'zh' ? '中度压力' : 'Moderate Stress')}
+                    {diagnosis.stressPattern.severity === 'mild' && (lang === 'zh' ? '轻度压力' : 'Mild Stress')}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-slate-400 text-sm mb-2">
+                    {lang === 'zh' ? '触发因素' : 'Triggers'}:
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {diagnosis.stressPattern.triggers.map((trigger, index) => (
+                      <span
+                        key={index}
+                        className="bg-red-800 text-red-300 text-xs px-2 py-1 rounded"
+                      >
+                        {trigger}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-slate-400 text-sm mb-2">
+                    {lang === 'zh' ? '症状表现' : 'Symptoms'}:
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {diagnosis.stressPattern.symptoms.map((symptom, index) => (
+                      <span
+                        key={index}
+                        className="bg-red-800/50 text-red-400 text-xs px-2 py-1 rounded"
+                      >
+                        {symptom}
+                      </span>
+                    ))}
+                  </div>
+                </div>
               </div>
-            </div>
-          </section>
+            </section>
+          )}
 
           <section className="bg-slate-700/50 rounded-lg p-4 border border-slate-600">
             <h2 className="text-purple-500 font-bold mb-3 text-lg flex items-center gap-2">
@@ -107,28 +141,64 @@ const DiagnosisBook: React.FC<Props> = ({ diagnosis, onStart, onRetry, lang }) =
             </div>
           </section>
 
-          <section className="bg-slate-700/50 rounded-lg p-4 border border-slate-600">
-            <h2 className="text-green-500 font-bold mb-3 text-lg flex items-center gap-2">
-              <span>👟</span>
-              <span>{t.solution}</span>
-            </h2>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3 bg-green-900/20 rounded p-3 border border-green-600">
-                <span className="text-4xl">{diagnosis.shoeInfo.icon}</span>
+          {diagnosis.reliefStrategy && (
+            <section className="bg-gradient-to-br from-green-900/30 to-emerald-900/30 rounded-lg p-4 border-2 border-green-500">
+              <h2 className="text-green-400 font-bold mb-3 text-lg flex items-center gap-2">
+                <span>�</span>
+                <span>{t.solution}</span>
+              </h2>
+              <div className="space-y-4">
                 <div>
-                  <p className="text-xl font-bold text-green-400">{diagnosis.shoeInfo.name}</p>
-                  <p className="text-sm text-slate-400">{t.shoeType}</p>
+                  <h3 className="text-xl font-bold text-green-300 mb-2">
+                    {diagnosis.reliefStrategy.title}
+                  </h3>
+                  <p className="text-slate-300 text-sm leading-relaxed">
+                    {diagnosis.reliefStrategy.description}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-slate-400 text-sm mb-2">
+                    {lang === 'zh' ? '推荐行动' : 'Recommended Actions'}:
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {diagnosis.reliefStrategy.actions.map((action, index) => (
+                      <div
+                        key={index}
+                        className="bg-green-800/30 text-green-300 text-sm px-3 py-2 rounded border border-green-700"
+                      >
+                        {action}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 bg-green-900/20 rounded p-3 border border-green-600">
+                  <span className="text-3xl">⏱️</span>
+                  <div>
+                    <p className="text-lg font-bold text-green-400">
+                      {lang === 'zh' ? '建议时长' : 'Suggested Duration'}:
+                    </p>
+                    <p className="text-2xl font-bold text-green-300">
+                      {diagnosis.reliefStrategy.duration}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-slate-400 text-sm">
+                    {lang === 'zh' ? '有效性' : 'Effectiveness'}:
+                  </span>
+                  <span className={`text-sm font-bold px-2 py-1 rounded ${
+                    diagnosis.reliefStrategy.effectiveness === 'high' ? 'bg-green-600 text-white' :
+                    diagnosis.reliefStrategy.effectiveness === 'medium' ? 'bg-yellow-600 text-white' :
+                    'bg-slate-600 text-white'
+                  }`}>
+                    {diagnosis.reliefStrategy.effectiveness === 'high' && (lang === 'zh' ? '高' : 'High')}
+                    {diagnosis.reliefStrategy.effectiveness === 'medium' && (lang === 'zh' ? '中' : 'Medium')}
+                    {diagnosis.reliefStrategy.effectiveness === 'low' && (lang === 'zh' ? '低' : 'Low')}
+                  </span>
                 </div>
               </div>
-              <div className="flex items-center gap-3 bg-amber-900/20 rounded p-3 border border-amber-600">
-                <span className="text-4xl">⏰</span>
-                <div>
-                  <p className="text-xl font-bold text-amber-400">{diagnosis.optimalTime.name}</p>
-                  <p className="text-sm text-slate-400">{t.optimalTime}: {diagnosis.optimalTime.range}</p>
-                </div>
-              </div>
-            </div>
-          </section>
+            </section>
+          )}
 
           <section className="bg-gradient-to-r from-amber-900/50 to-amber-800/50 rounded-lg p-4 border-2 border-amber-500">
             <h2 className="text-amber-400 font-bold mb-3 text-lg flex items-center gap-2">

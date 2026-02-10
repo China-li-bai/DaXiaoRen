@@ -26,6 +26,8 @@ export interface OptimalTime {
   element: 'wood' | 'fire' | 'earth' | 'metal' | 'water';
 }
 
+import { ReliefStrategy, StressPattern, analyzeStressPattern, generateReliefStrategy } from './reliefStrategy';
+
 export interface Diagnosis {
   bazi: Bazi;
   villainInfo: VillainInfo;
@@ -34,6 +36,8 @@ export interface Diagnosis {
   optimalTime: OptimalTime;
   isAdvantageous: boolean;
   psychologicalEffect: string;
+  stressPattern?: StressPattern;
+  reliefStrategy?: ReliefStrategy;
 }
 
 const heavenlyStems = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸'];
@@ -59,6 +63,8 @@ const elementNames: Record<string, string> = {
   'metal': '金',
   'water': '水'
 };
+
+export { elementNames };
 
 const elementColors: Record<string, string> = {
   'wood': '#22c55e',
@@ -184,6 +190,9 @@ export function generateDiagnosis(
   
   const isAdvantageous = data.stressTypes && data.stressTypes.length > 0;
   
+  const stressPattern = analyzeStressPattern(data);
+  const reliefStrategy = generateReliefStrategy(bazi, stressPattern, lang);
+  
   const psychologicalEffect = generatePsychologicalEffect(
     bazi,
     villainInfo,
@@ -202,7 +211,9 @@ export function generateDiagnosis(
     shoeInfo,
     optimalTime,
     isAdvantageous,
-    psychologicalEffect
+    psychologicalEffect,
+    stressPattern,
+    reliefStrategy
   };
 }
 

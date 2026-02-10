@@ -4,6 +4,7 @@ import { TRANSLATIONS, PAYMENT_CONFIG } from './constants';
 import { generateRitualChant, generateResolution } from './services/workerService';
 import { getLocalRecords, saveLocalRecord, deleteLocalRecord } from './services/storageService';
 import { Diagnosis, generateDiagnosis } from './utils/bazi';
+import { saveDiagnosis } from './utils/diagnosisStorage';
 import { hookModel, HookReward, generateVariableReward } from './utils/hookModel';
 import LanguageSwitch from './components/LanguageSwitch';
 import GlobalStats from './components/GlobalStats';
@@ -277,6 +278,7 @@ export default function App() {
 
   const handleOnboardingComplete = (data: any) => {
     const diagnosis = generateDiagnosis(data, lang);
+    saveDiagnosis(diagnosis);
     setDiagnosis(diagnosis);
     setStep(AppStep.INTRO);
   };
