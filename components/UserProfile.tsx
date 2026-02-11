@@ -198,27 +198,48 @@ const UserProfile: React.FC<Props> = ({ lang, onNewDiagnosis, onSelectDiagnosis,
         </SmoothTransition>
 
         <SmoothTransition>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <GlassCard hover={true} onClick={onNewDiagnosis} className="p-6">
-              <div className="text-4xl mb-3">📝</div>
-              <div className="text-xl font-bold text-white mb-1">
-                {lang === 'zh' ? '创建新诊断' : 'New Diagnosis'}
-              </div>
-              <div className="text-slate-400 text-sm">
-                {lang === 'zh' ? '开始新的压力分析' : 'Start a new stress analysis'}
-              </div>
-            </GlassCard>
+          {diagnoses.length === 0 ? (
+            <div className="grid gap-4 sm:grid-cols-2">
+              <GlassCard hover={true} onClick={onNewDiagnosis} className="p-6">
+                <div className="text-4xl mb-3">📝</div>
+                <div className="text-xl font-bold text-white mb-1">
+                  {lang === 'zh' ? '创建新诊断' : 'New Diagnosis'}
+                </div>
+                <div className="text-slate-400 text-sm">
+                  {lang === 'zh' ? '开始新的压力分析' : 'Start a new stress analysis'}
+                </div>
+              </GlassCard>
 
-            <GlassCard hover={true} onClick={onPrivacySettings} className="p-6">
-              <div className="text-4xl mb-3">🔒</div>
-              <div className="text-xl font-bold text-white mb-1">
-                {lang === 'zh' ? '隐私设置' : 'Privacy Settings'}
+              <GlassCard hover={true} onClick={onPrivacySettings} className="p-6">
+                <div className="text-4xl mb-3">🔒</div>
+                <div className="text-xl font-bold text-white mb-1">
+                  {lang === 'zh' ? '隐私设置' : 'Privacy Settings'}
+                </div>
+                <div className="text-slate-400 text-sm">
+                  {lang === 'zh' ? '管理您的隐私偏好' : 'Manage your privacy preferences'}
+                </div>
+              </GlassCard>
+            </div>
+          ) : (
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={onNewDiagnosis}
+                  className="bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white font-bold py-2 px-4 rounded-lg transition-all transform hover:scale-105 shadow-lg flex items-center gap-2"
+                >
+                  <span>📝</span>
+                  <span>{lang === 'zh' ? '创建新诊断' : 'New Diagnosis'}</span>
+                </button>
               </div>
-              <div className="text-slate-400 text-sm">
-                {lang === 'zh' ? '管理您的隐私偏好' : 'Manage your privacy preferences'}
-              </div>
-            </GlassCard>
-          </div>
+              <button
+                onClick={onPrivacySettings}
+                className="bg-slate-700 hover:bg-slate-600 text-slate-300 font-bold py-2 px-4 rounded-lg transition-all flex items-center gap-2"
+              >
+                <span>🔒</span>
+                <span>{lang === 'zh' ? '隐私设置' : 'Privacy Settings'}</span>
+              </button>
+            </div>
+          )}
         </SmoothTransition>
 
         {stats && (

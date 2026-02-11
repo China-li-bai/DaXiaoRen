@@ -90,7 +90,7 @@ const LeaderboardWidget: React.FC<Props> = ({ clicksToAdd, onClicksSent, isOpen,
       {/* Floating Toggle Button - Mobile Optimized */}
       <button 
         onClick={onToggle}
-        className="fixed bottom-4 left-4 z-40 bg-slate-900 border border-amber-600 text-amber-500 p-2 sm:p-3 rounded-full shadow-lg hover:bg-slate-800 hover:scale-110 transition-all active:scale-95 flex items-center gap-2 group"
+        className="fixed bottom-4 right-4 z-40 bg-slate-900 border border-amber-600 text-amber-500 p-2 sm:p-3 rounded-full shadow-lg hover:bg-slate-800 hover:scale-110 transition-all active:scale-95 flex items-center gap-2 group"
         aria-label="Toggle Leaderboard"
       >
         <span className="group-hover:animate-bounce text-lg sm:text-xl">🏆</span>
@@ -98,7 +98,7 @@ const LeaderboardWidget: React.FC<Props> = ({ clicksToAdd, onClicksSent, isOpen,
       </button>
 
       {/* Drawer - Responsive Width */}
-      <div className={`fixed inset-y-0 left-0 w-full sm:w-80 bg-slate-900 border-r border-slate-700 shadow-2xl z-50 transform transition-transform duration-300 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div className={`fixed inset-y-0 right-0 w-full sm:w-80 bg-slate-900 border-l border-slate-700 shadow-2xl z-50 transform transition-transform duration-300 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
         <div className="p-3 sm:p-4 bg-slate-800 border-b border-slate-700 flex justify-between items-center">
            <div>
              <h3 className="text-amber-500 font-bold uppercase tracking-widest text-sm sm:text-base">Global Rankings</h3>
