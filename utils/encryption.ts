@@ -14,10 +14,15 @@ const ENCRYPTION_KEY_STORAGE = 'encryption_key';
 const ENCRYPTION_ENABLED_KEY = 'encryption_enabled';
 
 export async function generateEncryptionKey(): Promise<EncryptionKey> {
-  const salt = crypto.getRandomValues(new Uint8Array(16));
-  const iv = crypto.getRandomValues(new Uint8Array(12));
-  
-  const key = await crypto.subtle.generateKey(
+  const cryptoObj = window.crypto || (globalThis as any).crypto;
+  if (!cryptoObj || !cryptoObj.subtle) {
+    throw new Error('Web Crypto API not available');
+  }
+
+  const salt = cryptoObj.getRandomValues(new Uint8Array(16));
+  const iv = cryptoObj.getRandomValues(new Uint8Array(12));
+
+  const key = await cryptoObj.subtle.generateKey(
     {
       name: 'AES-GCM',
       length: 256
@@ -25,7 +30,7 @@ export async function generateEncryptionKey(): Promise<EncryptionKey> {
     true,
     ['encrypt', 'decrypt']
   );
-  
+
   return {
     key,
     salt: arrayBufferToBase64(salt),
@@ -34,10 +39,15 @@ export async function generateEncryptionKey(): Promise<EncryptionKey> {
 }
 
 export async function encryptData(data: string, encryptionKey: EncryptionKey): Promise<EncryptedData> {
+  const cryptoObj = window.crypto || (globalThis as any).crypto;
+  if (!cryptoObj || !cryptoObj.subtle) {
+    throw new Error('Web Crypto API not available');
+  }
+
   const encoder = new TextEncoder();
   const dataBuffer = encoder.encode(data);
-  
-  const encryptedBuffer = await crypto.subtle.encrypt(
+
+  const encryptedBuffer = await cryptoObj.subtle.encrypt(
     {
       name: 'AES-GCM',
       iv: base64ToArrayBuffer(encryptionKey.iv)
@@ -45,7 +55,7 @@ export async function encryptData(data: string, encryptionKey: EncryptionKey): P
     encryptionKey.key,
     dataBuffer
   );
-  
+
   return {
     data: arrayBufferToBase64(encryptedBuffer),
     salt: encryptionKey.salt,
@@ -54,9 +64,14 @@ export async function encryptData(data: string, encryptionKey: EncryptionKey): P
 }
 
 export async function decryptData(encryptedData: EncryptedData, encryptionKey: EncryptionKey): Promise<string> {
+  const cryptoObj = window.crypto || (globalThis as any).crypto;
+  if (!cryptoObj || !cryptoObj.subtle) {
+    throw new Error('Web Crypto API not available');
+  }
+
   const encryptedBuffer = base64ToArrayBuffer(encryptedData.data);
-  
-  const decryptedBuffer = await crypto.subtle.decrypt(
+
+  const decryptedBuffer = await cryptoObj.subtle.decrypt(
     {
       name: 'AES-GCM',
       iv: base64ToArrayBuffer(encryptedData.iv)
@@ -64,13 +79,18 @@ export async function decryptData(encryptedData: EncryptedData, encryptionKey: E
     encryptionKey.key,
     encryptedBuffer
   );
-  
+
   const decoder = new TextDecoder();
   return decoder.decode(decryptedBuffer);
 }
 
 export async function saveEncryptionKey(encryptionKey: EncryptionKey): Promise<void> {
-  const exportedKey = await crypto.subtle.exportKey('jwk', encryptionKey.key);
+  const cryptoObj = window.crypto || (globalThis as any).crypto;
+  if (!cryptoObj || !cryptoObj.subtle) {
+    throw new Error('Web Crypto API not available');
+  }
+
+  const exportedKey = await cryptoObj.subtle.exportKey('jwk', encryptionKey.key);
   const keyData = {
     key: exportedKey,
     salt: encryptionKey.salt,
@@ -82,10 +102,14 @@ export async function saveEncryptionKey(encryptionKey: EncryptionKey): Promise<v
 export async function loadEncryptionKey(): Promise<EncryptionKey | null> {
   const keyDataStr = localStorage.getItem(ENCRYPTION_KEY_STORAGE);
   if (!keyDataStr) return null;
-  
   try {
     const keyData = JSON.parse(keyDataStr);
-    const key = await crypto.subtle.importKey(
+    const cryptoObj = window.crypto || (globalThis as any).crypto;
+    if (!cryptoObj || !cryptoObj.subtle) {
+      throw new Error('Web Crypto API not available');
+    }
+
+    const key = await cryptoObj.subtle.importKey(
       'jwk',
       keyData.key,
       {
@@ -95,7 +119,7 @@ export async function loadEncryptionKey(): Promise<EncryptionKey | null> {
       true,
       ['encrypt', 'decrypt']
     );
-    
+
     return {
       key,
       salt: keyData.salt,
@@ -123,33 +147,47 @@ export async function initializeEncryption(): Promise<EncryptionKey | null> {
   if (!isEncryptionEnabled()) {
     return null;
   }
-  
+
+  const cryptoObj = window.crypto || (globalThis as any).crypto;
+  if (!cryptoObj || !cryptoObj.subtle) {
+    console.warn('Web Crypto API not available, encryption disabled');
+    setEncryptionEnabled(false);
+    return null;
+  }
+
   let encryptionKey = await loadEncryptionKey();
-  
+
   if (!encryptionKey) {
     encryptionKey = await generateEncryptionKey();
     await saveEncryptionKey(encryptionKey);
   }
-  
+
   return encryptionKey;
 }
 
 export async function encryptAndStore(key: string, data: any): Promise<void> {
   const encryptionEnabled = isEncryptionEnabled();
-  
+
   if (!encryptionEnabled) {
     localStorage.setItem(key, JSON.stringify(data));
     return;
   }
-  
+
+  const cryptoObj = window.crypto || (globalThis as any).crypto;
+  if (!cryptoObj || !cryptoObj.subtle) {
+    console.warn('Web Crypto API not available, storing data without encryption');
+    localStorage.setItem(key, JSON.stringify(data));
+    return;
+  }
+
   let encryptionKey = await loadEncryptionKey();
-  
+
   if (!encryptionKey) {
     console.log('Encryption key not found, generating new key...');
     encryptionKey = await generateEncryptionKey();
     await saveEncryptionKey(encryptionKey);
   }
-  
+
   const jsonData = JSON.stringify(data);
   const encrypted = await encryptData(jsonData, encryptionKey);
   localStorage.setItem(key, JSON.stringify(encrypted));
@@ -158,21 +196,27 @@ export async function encryptAndStore(key: string, data: any): Promise<void> {
 export async function decryptAndRetrieve<T>(key: string): Promise<T | null> {
   const dataStr = localStorage.getItem(key);
   if (!dataStr) return null;
-  
+
   try {
     const data = JSON.parse(dataStr);
-    
+
     if (data.data && data.salt && data.iv) {
+      const cryptoObj = window.crypto || (globalThis as any).crypto;
+      if (!cryptoObj || !cryptoObj.subtle) {
+        console.warn('Web Crypto API not available, cannot decrypt');
+        return null;
+      }
+
       const encryptionKey = await loadEncryptionKey();
       if (!encryptionKey) {
         console.log('Encryption key not found, returning encrypted data as-is');
         return null;
       }
-      
+
       const decrypted = await decryptData(data as EncryptedData, encryptionKey);
       return JSON.parse(decrypted) as T;
     }
-    
+
     return data as T;
   } catch (error) {
     console.error('Failed to decrypt data:', error);

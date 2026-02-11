@@ -12,21 +12,21 @@ const ProgressIndicator: React.FC<Props> = ({ current, total, lang }) => {
 
   return (
     <div className="w-full max-w-md mx-auto mb-8">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-slate-400 text-sm">
-          {lang === 'zh' ? `步骤 ${current} / ${total}` : `Step ${current} / ${total}`}
+      <div className="flex items-center justify-between mb-2 font-mono">
+        <span className="text-[#4A4A4A] text-xs">
+          STEP [{current}/{total}]
         </span>
-        <span className="text-amber-500 font-bold text-sm">
+        <span className="text-[#FFD700] font-bold text-xs">
           {Math.round(progress)}%
         </span>
       </div>
-      <div className="h-2 bg-slate-700 rounded-full overflow-hidden">
+      <div className="h-2 bg-black border-2 border-[#4A4A4A] rounded-sm overflow-hidden">
         <div
-          className="h-full bg-gradient-to-r from-amber-500 to-orange-500 rounded-full transition-all duration-500 ease-out"
+          className="h-full bg-gradient-to-r from-[#FFD700] to-[#FFA500] transition-all duration-300 ease-out"
           style={{ width: `${progress}%` }}
         />
       </div>
-      <div className="flex justify-between mt-2">
+      <div className="flex justify-between mt-3">
         {steps.map((_, index) => {
           const stepNumber = index + 1;
           const isCompleted = stepNumber < current;
@@ -37,10 +37,10 @@ const ProgressIndicator: React.FC<Props> = ({ current, total, lang }) => {
             <div
               key={index}
               className={`
-                w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all duration-300
-                ${isCompleted ? 'bg-amber-500 text-white' : ''}
-                ${isCurrent ? 'bg-amber-500 text-white ring-4 ring-amber-500/30' : ''}
-                ${isFuture ? 'bg-slate-700 text-slate-400' : ''}
+                w-8 h-8 rounded flex items-center justify-center text-xs font-bold transition-all duration-300 font-mono border-2
+                ${isCompleted ? 'bg-[#00FF41]/20 border-[#00FF41] text-[#00FF41]' : ''}
+                ${isCurrent ? 'bg-[#FFD700]/20 border-[#FFD700] text-[#FFD700] animate-pulse' : ''}
+                ${isFuture ? 'bg-black border-[#4A4A4A] text-[#4A4A4A]' : ''}
               `}
             >
               {isCompleted ? '✓' : stepNumber}

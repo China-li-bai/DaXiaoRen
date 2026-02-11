@@ -11,7 +11,6 @@ import { hookModel, HookReward, generateVariableReward } from './utils/hookModel
 import LanguageSwitch from './components/LanguageSwitch';
 import GlobalStats from './components/GlobalStats';
 import HeritageBadge from './components/HeritageBadge';
-import Onboarding from './components/Onboarding';
 import OnboardingWizard from './components/OnboardingWizard';
 import DiagnosisBook from './components/DiagnosisBook';
 import DiagnosisBookNew from './components/DiagnosisBookNew';
