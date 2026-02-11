@@ -10,18 +10,17 @@ import { generateProfessionalDiagnosis, calculateBazi, analyzeFiveElementsStreng
 import { hookModel, HookReward, generateVariableReward } from './utils/hookModel';
 import LanguageSwitch from './components/LanguageSwitch';
 import GlobalStats from './components/GlobalStats';
-import LeaderboardWidget from './components/LeaderboardWidget';
 import HeritageBadge from './components/HeritageBadge';
 import Onboarding from './components/Onboarding';
 import OnboardingWizard from './components/OnboardingWizard';
 import DiagnosisBook from './components/DiagnosisBook';
 import DiagnosisBookNew from './components/DiagnosisBookNew';
-import HookRewardDisplay from './components/HookRewardDisplay';
 import DailyChallenge from './components/DailyChallenge';
 import TalismanSystem, { dropRandomTalisman } from './components/TalismanSystem';
-import UserProfile from './components/UserProfile';
 import PrivacySettings from './components/PrivacySettings';
 import PrivacyPolicy from './components/PrivacyPolicy';
+import FloatingDock from './components/FloatingDock';
+import UserProfile from './components/UserProfile';
 
 const VillainForm = lazy(() => import('./components/VillainForm'));
 const RitualStage = lazy(() => import('./components/RitualStage'));
@@ -461,13 +460,7 @@ export default function App() {
           </svg>
         </button>
       )}
-      {/* Leaderboard Widget */}
-      <LeaderboardWidget 
-         clicksToAdd={pendingLeaderboardClicks} 
-         onClicksSent={() => setPendingLeaderboardClicks(0)}
-         isOpen={showLeaderboard}
-         onToggle={() => setShowLeaderboard(!showLeaderboard)}
-      />
+
       <main className="z-10 w-full flex flex-col items-center justify-center flex-grow">
         
         {step === AppStep.ONBOARDING && (
@@ -621,8 +614,15 @@ export default function App() {
         )}
       </main>
 
-      {/* Hook Reward Display */}
-      <HookRewardDisplay lang={lang} />
+      {/* Floating Dock - Unified Navigation */}
+      <FloatingDock 
+        lang={lang}
+        onSelectDiagnosis={handleSelectDiagnosis}
+        onNewDiagnosis={handleNewDiagnosis}
+        onPrivacySettings={handleGoToPrivacySettings}
+        clicksToAdd={pendingLeaderboardClicks}
+        onClicksSent={() => setPendingLeaderboardClicks(0)}
+      />
 
       {/* Talisman System */}
       <TalismanSystem lang={lang} />
