@@ -11,7 +11,9 @@ export interface SavedDiagnosis extends Diagnosis {
 }
 
 export async function saveDiagnosis(diagnosis: Diagnosis): Promise<SavedDiagnosis> {
+  console.log('saveDiagnosis - starting...');
   const saved = await getSavedDiagnoses();
+  console.log('saveDiagnosis - current saved diagnoses:', saved);
   
   const newDiagnosis: SavedDiagnosis = {
     ...diagnosis,
@@ -21,23 +23,36 @@ export async function saveDiagnosis(diagnosis: Diagnosis): Promise<SavedDiagnosi
     useCount: 0
   };
   
+  console.log('saveDiagnosis - new diagnosis:', newDiagnosis);
+  
   const updated = [...saved, newDiagnosis];
+  console.log('saveDiagnosis - updated list:', updated);
+  
   await encryptAndStore(STORAGE_KEY, updated);
+  console.log('saveDiagnosis - saved successfully');
   
   return newDiagnosis;
 }
 
 export async function getSavedDiagnoses(): Promise<SavedDiagnosis[]> {
+  console.log('getSavedDiagnoses - starting...');
+  
   const saved = await decryptAndRetrieve<SavedDiagnosis[]>(STORAGE_KEY);
   if (saved) {
+    console.log('getSavedDiagnoses - found saved diagnoses:', saved);
     return saved;
   }
   
   const plainData = localStorage.getItem(STORAGE_KEY);
+  console.log('getSavedDiagnoses - checking plain data:', plainData ? 'exists' : 'not found');
+  
   if (plainData) {
     try {
       const parsed = JSON.parse(plainData);
+      console.log('getSavedDiagnoses - parsed plain data:', parsed);
+      
       if (isEncryptionEnabled()) {
+        console.log('getSavedDiagnoses - encryption enabled, migrating...');
         await migrateToEncryption(STORAGE_KEY);
       }
       return parsed;
@@ -46,6 +61,7 @@ export async function getSavedDiagnoses(): Promise<SavedDiagnosis[]> {
       return [];
     }
   }
+  console.log('getSavedDiagnoses - no data found, returning empty array');
   return [];
 }
 

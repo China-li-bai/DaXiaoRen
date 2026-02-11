@@ -9,6 +9,9 @@ import {
   migrateToEncryption 
 } from '../utils/encryption';
 import { getSavedDiagnoses, deleteAllDiagnoses } from '../utils/diagnosisStorage';
+import GlassCard from './ui/GlassCard';
+import SmoothTransition from './ui/SmoothTransition';
+import IOSSwitch from './ui/IOSSwitch';
 
 interface Props {
   lang: Language;
@@ -68,25 +71,27 @@ const PrivacySettings: React.FC<Props> = ({ lang, onBack, onPrivacyPolicy }) => 
 
   return (
     <div className="min-h-screen bg-slate-900 p-4 sm:p-6">
-      <div className="max-w-2xl mx-auto">
-        <header className="mb-6">
-          <button
-            onClick={onBack}
-            className="text-slate-400 hover:text-white mb-4 flex items-center gap-2 transition-colors"
-          >
-            <span>←</span>
-            <span>{lang === 'zh' ? '返回' : 'Back'}</span>
-          </button>
-          <h1 className="text-2xl sm:text-3xl font-bold text-amber-500 mb-2">
-            {lang === 'zh' ? '隐私设置' : 'Privacy Settings'}
-          </h1>
-          <p className="text-slate-400 text-sm">
-            {lang === 'zh' ? '控制您的数据隐私和安全设置' : 'Control your data privacy and security settings'}
-          </p>
-        </header>
+      <div className="max-w-2xl mx-auto space-y-6">
+        <SmoothTransition>
+          <header className="mb-6">
+            <button
+              onClick={onBack}
+              className="text-slate-400 hover:text-white mb-4 flex items-center gap-2 transition-colors"
+            >
+              <span>←</span>
+              <span>{lang === 'zh' ? '返回' : 'Back'}</span>
+            </button>
+            <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-amber-400 to-orange-500 bg-clip-text text-transparent mb-2">
+              {lang === 'zh' ? '隐私设置' : 'Privacy Settings'}
+            </h1>
+            <p className="text-slate-400 text-sm">
+              {lang === 'zh' ? '控制您的数据隐私和安全设置' : 'Control your data privacy and security settings'}
+            </p>
+          </header>
+        </SmoothTransition>
 
-        <div className="space-y-4">
-          <div className="bg-slate-800 rounded-xl p-4 sm:p-6">
+        <SmoothTransition>
+          <GlassCard className="p-4 sm:p-6">
             <div className="flex items-start justify-between mb-4">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-2">
@@ -103,14 +108,14 @@ const PrivacySettings: React.FC<Props> = ({ lang, onBack, onPrivacyPolicy }) => 
               </div>
               <button
                 onClick={() => setShowEncryptionInfo(!showEncryptionInfo)}
-                className="text-slate-400 hover:text-white p-2"
+                className="text-slate-400 hover:text-white p-2 transition-colors"
               >
                 {showEncryptionInfo ? '▼' : 'ℹ️'}
               </button>
             </div>
 
             {showEncryptionInfo && (
-              <div className="bg-slate-700 rounded-lg p-4 mb-4 text-sm">
+              <div className="bg-slate-700/50 rounded-lg p-4 mb-4 text-sm backdrop-blur-sm">
                 <h3 className="text-white font-bold mb-2">
                   {lang === 'zh' ? '加密说明' : 'Encryption Details'}
                 </h3>
@@ -124,37 +129,36 @@ const PrivacySettings: React.FC<Props> = ({ lang, onBack, onPrivacyPolicy }) => 
             )}
 
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3">
                 <span className={`text-2xl ${encryptionEnabled ? 'text-green-400' : 'text-orange-400'}`}>
                   {encryptionEnabled ? '✓' : '⚠️'}
                 </span>
-                <span className="text-white font-medium">
-                  {encryptionEnabled
-                    ? (lang === 'zh' ? '已启用' : 'Enabled')
-                    : (lang === 'zh' ? '未启用' : 'Disabled')}
-                </span>
+                <div>
+                  <span className="text-white font-medium block">
+                    {encryptionEnabled
+                      ? (lang === 'zh' ? '已启用' : 'Enabled')
+                      : (lang === 'zh' ? '未启用' : 'Disabled')}
+                  </span>
+                  <span className="text-slate-400 text-xs">
+                    {encryptionEnabled
+                      ? (lang === 'zh' ? '您的数据已受到保护' : 'Your data is protected')
+                      : (lang === 'zh' ? '建议启用以保护数据' : 'Recommended to protect data')}
+                  </span>
+                </div>
               </div>
-              <button
-                onClick={handleToggleEncryption}
+              <IOSSwitch
+                checked={encryptionEnabled}
+                onChange={handleToggleEncryption}
                 disabled={loading}
-                className={`px-4 py-2 rounded-lg font-bold transition-all ${
-                  loading
-                    ? 'bg-slate-600 text-slate-400 cursor-not-allowed'
-                    : encryptionEnabled
-                    ? 'bg-red-600 hover:bg-red-700 text-white'
-                    : 'bg-green-600 hover:bg-green-700 text-white'
-                }`}
-              >
-                {loading
-                  ? (lang === 'zh' ? '处理中...' : 'Processing...')
-                  : encryptionEnabled
-                  ? (lang === 'zh' ? '禁用' : 'Disable')
-                  : (lang === 'zh' ? '启用' : 'Enable')}
-              </button>
+                color={encryptionEnabled ? 'green' : 'amber'}
+                size="medium"
+              />
             </div>
-          </div>
+          </GlassCard>
+        </SmoothTransition>
 
-          <div className="bg-slate-800 rounded-xl p-4 sm:p-6">
+        <SmoothTransition>
+          <GlassCard className="p-4 sm:p-6">
             <div className="flex items-center gap-2 mb-4">
               <span className="text-2xl">📄</span>
               <h2 className="text-xl font-bold text-white">
@@ -168,13 +172,15 @@ const PrivacySettings: React.FC<Props> = ({ lang, onBack, onPrivacyPolicy }) => 
             </p>
             <button
               onClick={onPrivacyPolicy}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded-lg transition-all"
+              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3 px-4 rounded-xl transition-all transform hover:scale-105 shadow-lg"
             >
               {lang === 'zh' ? '查看隐私政策' : 'View Privacy Policy'}
             </button>
-          </div>
+          </GlassCard>
+        </SmoothTransition>
 
-          <div className="bg-slate-800 rounded-xl p-4 sm:p-6">
+        <SmoothTransition>
+          <GlassCard className="p-4 sm:p-6">
             <div className="flex items-center gap-2 mb-4">
               <span className="text-2xl">🗑️</span>
               <h2 className="text-xl font-bold text-white">
@@ -188,13 +194,15 @@ const PrivacySettings: React.FC<Props> = ({ lang, onBack, onPrivacyPolicy }) => 
             </p>
             <button
               onClick={() => setShowDeleteConfirm(true)}
-              className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition-all"
+              className="w-full bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold py-3 px-4 rounded-xl transition-all transform hover:scale-105 shadow-lg"
             >
               {lang === 'zh' ? '删除所有数据' : 'Delete All Data'}
             </button>
-          </div>
+          </GlassCard>
+        </SmoothTransition>
 
-          <div className="bg-slate-800 rounded-xl p-4 sm:p-6">
+        <SmoothTransition>
+          <GlassCard className="p-4 sm:p-6">
             <div className="flex items-center gap-2 mb-4">
               <span className="text-2xl">🛡️</span>
               <h2 className="text-xl font-bold text-white">
@@ -255,16 +263,16 @@ const PrivacySettings: React.FC<Props> = ({ lang, onBack, onPrivacyPolicy }) => 
                 </div>
               </div>
             </div>
-          </div>
-        </div>
+          </GlassCard>
+        </SmoothTransition>
 
         {showDeleteConfirm && (
-          <div className="fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50">
-            <div className="bg-slate-800 rounded-xl p-6 max-w-md w-full">
+          <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+            <GlassCard className="p-6 max-w-md w-full">
               <h3 className="text-xl font-bold text-white mb-4">
                 {lang === 'zh' ? '确认删除所有数据' : 'Confirm Delete All Data'}
               </h3>
-              <p className="text-slate-400 mb-6">
+              <p className="text-slate-400 mb-6 whitespace-pre-line">
                 {lang === 'zh' 
                   ? '确定要删除所有数据吗？这将包括：\n• 所有诊断记录\n• 隐私设置\n• 加密密钥\n\n此操作无法撤销。'
                   : 'Are you sure you want to delete all data? This will include:\n• All diagnosis records\n• Privacy settings\n• Encryption keys\n\nThis action cannot be undone.'}
@@ -272,18 +280,18 @@ const PrivacySettings: React.FC<Props> = ({ lang, onBack, onPrivacyPolicy }) => 
               <div className="flex gap-3">
                 <button
                   onClick={() => setShowDeleteConfirm(false)}
-                  className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 px-4 rounded-lg transition-all"
+                  className="flex-1 bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 px-4 rounded-xl transition-all"
                 >
                   {lang === 'zh' ? '取消' : 'Cancel'}
                 </button>
                 <button
                   onClick={handleDeleteAllData}
-                  className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition-all"
+                  className="flex-1 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold py-3 px-4 rounded-xl transition-all"
                 >
                   {lang === 'zh' ? '确认删除' : 'Confirm Delete'}
                 </button>
               </div>
-            </div>
+            </GlassCard>
           </div>
         )}
       </div>

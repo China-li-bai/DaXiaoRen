@@ -136,15 +136,23 @@ export async function initializeEncryption(): Promise<EncryptionKey | null> {
 
 export async function encryptAndStore(key: string, data: any): Promise<void> {
   const encryptionEnabled = isEncryptionEnabled();
-  const encryptionKey = encryptionEnabled ? await loadEncryptionKey() : null;
   
-  if (encryptionKey) {
-    const jsonData = JSON.stringify(data);
-    const encrypted = await encryptData(jsonData, encryptionKey);
-    localStorage.setItem(key, JSON.stringify(encrypted));
-  } else {
+  if (!encryptionEnabled) {
     localStorage.setItem(key, JSON.stringify(data));
+    return;
   }
+  
+  let encryptionKey = await loadEncryptionKey();
+  
+  if (!encryptionKey) {
+    console.log('Encryption key not found, generating new key...');
+    encryptionKey = await generateEncryptionKey();
+    await saveEncryptionKey(encryptionKey);
+  }
+  
+  const jsonData = JSON.stringify(data);
+  const encrypted = await encryptData(jsonData, encryptionKey);
+  localStorage.setItem(key, JSON.stringify(encrypted));
 }
 
 export async function decryptAndRetrieve<T>(key: string): Promise<T | null> {
@@ -157,7 +165,8 @@ export async function decryptAndRetrieve<T>(key: string): Promise<T | null> {
     if (data.data && data.salt && data.iv) {
       const encryptionKey = await loadEncryptionKey();
       if (!encryptionKey) {
-        return data as T;
+        console.log('Encryption key not found, returning encrypted data as-is');
+        return null;
       }
       
       const decrypted = await decryptData(data as EncryptedData, encryptionKey);
@@ -167,6 +176,7 @@ export async function decryptAndRetrieve<T>(key: string): Promise<T | null> {
     return data as T;
   } catch (error) {
     console.error('Failed to decrypt data:', error);
+    console.error('Data string:', dataStr);
     return null;
   }
 }

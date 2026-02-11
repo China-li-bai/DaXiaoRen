@@ -13,7 +13,9 @@ import GlobalStats from './components/GlobalStats';
 import LeaderboardWidget from './components/LeaderboardWidget';
 import HeritageBadge from './components/HeritageBadge';
 import Onboarding from './components/Onboarding';
+import OnboardingWizard from './components/OnboardingWizard';
 import DiagnosisBook from './components/DiagnosisBook';
+import DiagnosisBookNew from './components/DiagnosisBookNew';
 import HookRewardDisplay from './components/HookRewardDisplay';
 import DailyChallenge from './components/DailyChallenge';
 import TalismanSystem, { dropRandomTalisman } from './components/TalismanSystem';
@@ -102,12 +104,18 @@ export default function App() {
     // Check for existing diagnoses
     const checkExistingDiagnoses = async () => {
       const savedDiagnoses = await getSavedDiagnoses();
+      console.log('checkExistingDiagnoses - savedDiagnoses:', savedDiagnoses);
+      console.log('checkExistingDiagnoses - length:', savedDiagnoses.length);
+      
       if (savedDiagnoses.length > 0) {
         setStep(AppStep.PROFILE);
       } else {
         setStep(AppStep.ONBOARDING);
       }
     };
+
+    // Immediately check for existing diagnoses
+    checkExistingDiagnoses();
 
     // Hook Model: Initial trigger
     hookModel.trigger('internal', lang === 'zh' ? '开始压力释放之旅' : 'Start your stress relief journey', () => {
@@ -292,6 +300,7 @@ export default function App() {
   };
 
   const handleOnboardingComplete = async (data: any) => {
+    console.log('handleOnboardingComplete - starting...');
     console.log('handleOnboardingComplete - data:', data);
     
     const bazi = calculateBazi(data.birthYear, data.birthMonth, data.birthDay, data.birthHour);
@@ -331,9 +340,13 @@ export default function App() {
     
     console.log('handleOnboardingComplete - enhancedDiagnosis:', enhancedDiagnosis);
     
+    console.log('handleOnboardingComplete - saving diagnosis to storage...');
     await saveDiagnosis(enhancedDiagnosis);
+    console.log('handleOnboardingComplete - diagnosis saved');
+    
     setDiagnosis(enhancedDiagnosis);
     setStep(AppStep.INTRO);
+    console.log('handleOnboardingComplete - completed');
   };
 
   const handleRetryDiagnosis = () => {
@@ -458,7 +471,7 @@ export default function App() {
       <main className="z-10 w-full flex flex-col items-center justify-center flex-grow">
         
         {step === AppStep.ONBOARDING && (
-          <Onboarding 
+          <OnboardingWizard 
             onComplete={handleOnboardingComplete} 
             onSkip={() => {
               setDiagnosis(null);
@@ -469,7 +482,7 @@ export default function App() {
         )}
 
         {step === AppStep.INTRO && diagnosis && (
-          <DiagnosisBook 
+          <DiagnosisBookNew 
             diagnosis={diagnosis} 
             onStart={handleStartRitual} 
             onRetry={handleRetryDiagnosis}

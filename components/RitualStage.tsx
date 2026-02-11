@@ -4,6 +4,7 @@ import { VillainData, Language, ChantResponse } from '../types';
 import { TRANSLATIONS, TOTAL_HITS_REQUIRED } from '../constants';
 import Villain from './Villain';
 import Shoe from './Shoe';
+import ParticleSystem from './ParticleSystem';
 import { getPartyKitHost } from '../config/partykit';
 import { useSpeechSynthesis } from '../hooks/useSpeechSynthesis';
 import { hookModel, generateVariableReward } from '../utils/hookModel';
@@ -39,6 +40,7 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
   const [isShaking, setIsShaking] = useState(false);
   const [impactEffect, setImpactEffect] = useState<{x: number, y: number, id: number, textRotation: number} | null>(null);
   const [particles, setParticles] = useState<Particle[]>([]);
+  const [particleEffects, setParticleEffects] = useState<Array<{id: number, x: number, y: number}>>([]);
   const [showShareTooltip, setShowShareTooltip] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const [onlineCount, setOnlineCount] = useState(1);
@@ -278,24 +280,12 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
       textRotation: Math.random() * 40 - 20 
     });
 
-    // 4. Particles (Add some "paper scraps" or sparks)
-    const newParticles: Particle[] = [];
-    for (let i = 0; i < 6; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const dist = 60 + Math.random() * 80;
-      newParticles.push({
-        id: Math.random(),
-        x: clientX,
-        y: clientY,
-        tx: Math.cos(angle) * dist + 'px',
-        ty: Math.sin(angle) * dist + 'px',
-        color: ['#fff', '#fbbf24', '#ef4444'][Math.floor(Math.random()*3)] // White/Gold/Red
-      });
-    }
-    setParticles(prev => [...prev, ...newParticles]);
+    // 4. Advanced Particle Effects
+    const particleId = Date.now();
+    setParticleEffects(prev => [...prev, { id: particleId, x: clientX, y: clientY }]);
     setTimeout(() => {
-        setParticles(prev => prev.filter(p => !newParticles.includes(p)));
-    }, 1000);
+      setParticleEffects(prev => prev.filter(p => p.id !== particleId));
+    }, 2000);
 
     // 5. Haptic feedback (Stronger pattern)
     if (navigator.vibrate) navigator.vibrate(50);
@@ -441,18 +431,14 @@ const RitualStage: React.FC<Props> = ({ lang, villain, chantData, onComplete, is
         </div>
       )}
 
-      {/* Particles Rendering */}
-      {particles.map(p => (
-        <div 
-            key={p.id}
-            className="fixed w-2 h-2 rounded-full pointer-events-none z-50 particle"
-            style={{
-                left: p.x,
-                top: p.y,
-                backgroundColor: p.color,
-                '--tx': p.tx,
-                '--ty': p.ty
-            } as React.CSSProperties}
+      {/* Advanced Particle Effects */}
+      {particleEffects.map(p => (
+        <ParticleSystem
+          key={p.id}
+          x={p.x}
+          y={p.y}
+          count={15}
+          color={hits >= TOTAL_HITS_REQUIRED - 10 ? '#ef4444' : '#fbbf24'}
         />
       ))}
 
