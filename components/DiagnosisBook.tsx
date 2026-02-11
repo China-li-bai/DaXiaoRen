@@ -8,10 +8,11 @@ interface Props {
   diagnosis: Diagnosis;
   onStart: () => void;
   onRetry: () => void;
+  onBackToProfile?: () => void;
   lang: Language;
 }
 
-const DiagnosisBook: React.FC<Props> = ({ diagnosis, onStart, onRetry, lang }) => {
+const DiagnosisBook: React.FC<Props> = ({ diagnosis, onStart, onRetry, onBackToProfile, lang }) => {
   const t = TRANSLATIONS[lang];
   
   console.log('DiagnosisBook - diagnosis:', diagnosis);
@@ -329,6 +330,14 @@ const DiagnosisBook: React.FC<Props> = ({ diagnosis, onStart, onRetry, lang }) =
         </div>
 
         <div className="bg-slate-700 p-4 flex gap-3">
+          {onBackToProfile && (
+            <button
+              onClick={onBackToProfile}
+              className="bg-slate-600 hover:bg-slate-500 text-white font-bold py-3 px-4 rounded-lg transition-all transform hover:scale-105 active:scale-95"
+            >
+              ←
+            </button>
+          )}
           <button
             onClick={onStart}
             className="flex-1 bg-amber-600 hover:bg-amber-700 text-white font-bold py-3 rounded-lg transition-all transform hover:scale-105 active:scale-95"

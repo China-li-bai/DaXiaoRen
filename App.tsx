@@ -4,7 +4,8 @@ import { TRANSLATIONS, PAYMENT_CONFIG } from './constants';
 import { generateRitualChant, generateResolution } from './services/workerService';
 import { getLocalRecords, saveLocalRecord, deleteLocalRecord } from './services/storageService';
 import { Diagnosis, generateDiagnosis } from './utils/bazi';
-import { saveDiagnosis } from './utils/diagnosisStorage';
+import { saveDiagnosis, getSavedDiagnoses } from './utils/diagnosisStorage';
+import { SavedDiagnosis } from './utils/diagnosisStorage';
 import { generateProfessionalDiagnosis, calculateBazi, analyzeFiveElementsStrength } from './utils/baziCalculator';
 import { hookModel, HookReward, generateVariableReward } from './utils/hookModel';
 import LanguageSwitch from './components/LanguageSwitch';
@@ -16,6 +17,9 @@ import DiagnosisBook from './components/DiagnosisBook';
 import HookRewardDisplay from './components/HookRewardDisplay';
 import DailyChallenge from './components/DailyChallenge';
 import TalismanSystem, { dropRandomTalisman } from './components/TalismanSystem';
+import UserProfile from './components/UserProfile';
+import PrivacySettings from './components/PrivacySettings';
+import PrivacyPolicy from './components/PrivacyPolicy';
 
 const VillainForm = lazy(() => import('./components/VillainForm'));
 const RitualStage = lazy(() => import('./components/RitualStage'));
@@ -95,9 +99,19 @@ export default function App() {
     }
     setRecords(getLocalRecords());
 
+    // Check for existing diagnoses
+    const checkExistingDiagnoses = async () => {
+      const savedDiagnoses = await getSavedDiagnoses();
+      if (savedDiagnoses.length > 0) {
+        setStep(AppStep.PROFILE);
+      } else {
+        setStep(AppStep.ONBOARDING);
+      }
+    };
+
     // Hook Model: Initial trigger
     hookModel.trigger('internal', lang === 'zh' ? '开始压力释放之旅' : 'Start your stress relief journey', () => {
-      setStep(AppStep.ONBOARDING);
+      checkExistingDiagnoses();
     }, 'high');
 
     // Check for "Assist Mode" params
@@ -277,7 +291,7 @@ export default function App() {
     setStep(AppStep.ONBOARDING);
   };
 
-  const handleOnboardingComplete = (data: any) => {
+  const handleOnboardingComplete = async (data: any) => {
     console.log('handleOnboardingComplete - data:', data);
     
     const bazi = calculateBazi(data.birthYear, data.birthMonth, data.birthDay, data.birthHour);
@@ -317,7 +331,7 @@ export default function App() {
     
     console.log('handleOnboardingComplete - enhancedDiagnosis:', enhancedDiagnosis);
     
-    saveDiagnosis(enhancedDiagnosis);
+    await saveDiagnosis(enhancedDiagnosis);
     setDiagnosis(enhancedDiagnosis);
     setStep(AppStep.INTRO);
   };
@@ -325,6 +339,28 @@ export default function App() {
   const handleRetryDiagnosis = () => {
     setDiagnosis(null);
     setStep(AppStep.ONBOARDING);
+  };
+
+  const handleNewDiagnosis = () => {
+    setDiagnosis(null);
+    setStep(AppStep.ONBOARDING);
+  };
+
+  const handleSelectDiagnosis = (savedDiagnosis: SavedDiagnosis) => {
+    setDiagnosis(savedDiagnosis);
+    setStep(AppStep.INTRO);
+  };
+
+  const handleGoToProfile = () => {
+    setStep(AppStep.PROFILE);
+  };
+
+  const handleGoToPrivacySettings = () => {
+    setStep(AppStep.PRIVACY_SETTINGS);
+  };
+
+  const handleGoToPrivacyPolicy = () => {
+    setStep(AppStep.PRIVACY_POLICY);
   };
 
   const handleStartRitual = () => {
@@ -437,6 +473,7 @@ export default function App() {
             diagnosis={diagnosis} 
             onStart={handleStartRitual} 
             onRetry={handleRetryDiagnosis}
+            onBackToProfile={handleGoToProfile}
             lang={lang}
           />
         )}
@@ -543,6 +580,30 @@ export default function App() {
             villain={villain}
             onReset={handleReset}
             isAssistMode={isAssistMode} 
+          />
+        )}
+
+        {step === AppStep.PROFILE && (
+          <UserProfile 
+            lang={lang}
+            onNewDiagnosis={handleNewDiagnosis}
+            onSelectDiagnosis={handleSelectDiagnosis}
+            onPrivacySettings={handleGoToPrivacySettings}
+          />
+        )}
+
+        {step === AppStep.PRIVACY_SETTINGS && (
+          <PrivacySettings 
+            lang={lang}
+            onBack={handleGoToProfile}
+            onPrivacyPolicy={handleGoToPrivacyPolicy}
+          />
+        )}
+
+        {step === AppStep.PRIVACY_POLICY && (
+          <PrivacyPolicy 
+            lang={lang}
+            onBack={handleGoToPrivacySettings}
           />
         )}
       </main>

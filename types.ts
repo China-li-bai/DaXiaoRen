@@ -29,7 +29,10 @@ export enum AppStep {
   PREPARING = 'PREPARING',
   RITUAL = 'RITUAL',
   RESOLVING = 'RESOLVING',
-  CONCLUSION = 'CONCLUSION'
+  CONCLUSION = 'CONCLUSION',
+  PROFILE = 'PROFILE', // User profile page
+  PRIVACY_SETTINGS = 'PRIVACY_SETTINGS', // Privacy settings page
+  PRIVACY_POLICY = 'PRIVACY_POLICY' // Privacy policy page
 }
 
 export interface ChantResponse {
